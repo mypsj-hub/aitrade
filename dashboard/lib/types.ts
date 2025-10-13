@@ -37,7 +37,7 @@ export interface TradeHistory {
   ai_thinking_process: string;
   수익금: number;
   판단확신: number;
-  주요지표: any; // JSONB
+  주요지표: Record<string, unknown>; // JSONB
 }
 
 export interface PortfolioSummary {
@@ -55,12 +55,12 @@ export interface CIOReport {
   report_date: string;
   report_type: string;
   title: string;
-  market_summary: any; // JSONB
+  market_summary: Record<string, unknown>; // JSONB
   performance_review: string;
-  self_critique: any; // JSONB
+  self_critique: Record<string, unknown>; // JSONB
   outlook: string;
   full_content_md: string;
-  raw_json_data: any; // JSONB
+  raw_json_data: Record<string, unknown>; // JSONB
   cio_latest_rationale: string;
 }
 
