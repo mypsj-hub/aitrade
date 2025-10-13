@@ -1,8 +1,0 @@
-# Streamlit Dashboard Dependencies (Vercel 배포용)
-# 주의: 트레이딩 봇용 requirements.txt와는 별도 파일입니다!
-
-streamlit==1.41.1
-pandas==2.2.3
-plotly==5.24.1
-supabase==2.11.5
-python-dotenv==1.0.1
