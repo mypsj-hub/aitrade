@@ -3,8 +3,8 @@
 .env.local
 .env.production
 
-# Streamlit secrets
-.streamlit/secrets.toml
+# Streamlit (deprecated - using Next.js now)
+.streamlit/
 
 # 데이터베이스 파일
 *.db
@@ -74,3 +74,23 @@ dmypy.json
 *.tmp
 *.bak
 *.swp
+
+# Archive (old docs and temp files)
+docs/archive/
+
+# Cache and debug files
+chart_cache/
+debug_prompts/
+
+# Claude Code
+.claude/
+
+# Trading Bot Source Code (Local Only - Not for GitHub)
+# Strategy: Dashboard only on GitHub, Bot code stays local
+main.py
+config.py
+data_manager.py
+trade_manager.py
+ai_strategy.py
+ai_strategy_*.py
+supabase_adapter.py
