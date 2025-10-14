@@ -1,5 +1,14 @@
 # 🚀 AI 트레이딩 대시보드 웹 서비스 전환 개발 계획서 (최종 버전)
 
+> **🚨 개발 규칙 (최우선 준수사항)**
+>
+> 1. **원본 코드 우선 확인**: 로컬 트레이딩봇 코드를 수정할 때는 **반드시 원본(DatabaseManager 등)을 먼저 확인**하고 동일하게 구현하세요.
+> 2. **검증된 시스템**: 로컬 트레이딩봇(main.py, supabase_adapter.py 등)은 **오랜 기간 테스트와 검증을 거친 프로그램**입니다. 임의로 변경하지 마세요.
+> 3. **신규 vs 레거시 구분**:
+>    - **레거시(검증 완료)**: 로컬 트레이딩봇 (main.py, config.py, supabase_adapter.py, ai_strategy.py, trade_manager.py 등)
+>    - **신규(개발 중)**: Next.js Dashboard (dashboard/ 폴더) - Streamlit을 개선한 새로운 웹 프로그램
+> 4. **수정 전 원본 대조**: 메서드 시그니처, 반환값 구조, 키 이름 등을 반드시 원본과 비교 후 수정하세요.
+>
 > **⚠️ 중요**: 이 문서는 개발 계획서입니다.
 >
 > **최신 배포 상태 및 이력**은 [DEPLOYMENT_SUCCESS.md](../DEPLOYMENT_SUCCESS.md)를 참조하세요.
