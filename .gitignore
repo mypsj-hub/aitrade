@@ -78,6 +78,9 @@ dmypy.json
 # Archive (old docs and temp files)
 docs/archive/
 
+# Dashboard docs (local development only)
+dashboard/docs/
+
 # Cache and debug files
 chart_cache/
 debug_prompts/
