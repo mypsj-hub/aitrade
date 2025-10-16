@@ -8,6 +8,9 @@ import { AnalysisFilters } from '@/components/AnalysisFilters';
 import { AnalysisSummary } from '@/components/AnalysisSummary';
 import { EnhancedTradesTable } from '@/components/EnhancedTradesTable';
 import { PnlByAssetChart } from '@/components/PnlByAssetChart';
+import { PerformanceTrendChart } from '@/components/PerformanceTrendChart';
+import { CoinStatsTable } from '@/components/CoinStatsTable';
+import { AIPatternAnalysis } from '@/components/AIPatternAnalysis';
 import type { Trade } from '@/lib/types';
 
 async function fetchAllTrades(): Promise<Trade[]> {
@@ -33,8 +36,15 @@ export default function AnalysisPage() {
 
     return allTrades.filter((trade) => {
       const tradeDate = new Date(trade.거래일시);
-      const isInDateRange =
-        tradeDate >= filters.dateRange.start && tradeDate <= filters.dateRange.end;
+
+      // 시작일은 00:00:00, 종료일은 23:59:59로 설정
+      const startOfDay = new Date(filters.dateRange.start);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(filters.dateRange.end);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const isInDateRange = tradeDate >= startOfDay && tradeDate <= endOfDay;
 
       const matchesTradeType =
         filters.tradeTypes.length === 0 || filters.tradeTypes.includes(trade.거래유형);
@@ -120,11 +130,19 @@ export default function AnalysisPage() {
             </div>
 
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간별 추이</h2>
-              <div className="h-[400px] flex items-center justify-center text-slate-500 text-sm">
-                PerformanceChart 통합 예정
-              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간별 누적 손익 추이</h2>
+              <PerformanceTrendChart trades={filteredTrades} />
             </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-4">🎯 코인별 상세 통계</h2>
+            <CoinStatsTable trades={filteredTrades} />
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-4">🤖 AI 매매 패턴 분석</h2>
+            <AIPatternAnalysis trades={filteredTrades} />
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">

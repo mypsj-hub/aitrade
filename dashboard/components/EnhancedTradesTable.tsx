@@ -34,6 +34,7 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
     { id: '거래일시', desc: true },
   ]);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [globalFilter, setGlobalFilter] = useState<string>('');
 
   const columns = useMemo<ColumnDef<Trade>[]>(
     () => [
@@ -77,7 +78,7 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
         cell: (info) => {
           const value = info.getValue() as number | null;
           if (value === null) return '-';
-          const colorClass = value >= 0 ? 'text-blue-600' : 'text-red-600';
+          const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
           return <span className={`font-semibold ${colorClass}`}>{formatCurrency(value)}</span>;
         },
         size: 120,
@@ -112,12 +113,15 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
     columns,
     state: {
       sorting,
+      globalFilter,
     },
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    globalFilterFn: 'includesString',
     initialState: {
       pagination: {
         pageSize: 20,
@@ -135,6 +139,40 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* 검색창 */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <input
+            type="text"
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="코인 이름으로 검색... (예: BTC, ETH)"
+            className="w-full px-4 py-2 pl-10 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        {globalFilter && (
+          <button
+            onClick={() => setGlobalFilter('')}
+            className="px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          >
+            초기화
+          </button>
+        )}
+      </div>
+
       {/* 테이블 */}
       <div className="overflow-x-auto border border-slate-200 rounded-lg">
         <table className="w-full">

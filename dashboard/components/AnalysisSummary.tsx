@@ -34,8 +34,8 @@ export function AnalysisSummary({
       label: '총 손익',
       value: formatCurrency(totalProfit),
       suffix: '',
-      color: totalProfit >= 0 ? 'text-blue-600' : 'text-red-600',
-      bgColor: totalProfit >= 0 ? 'bg-blue-50' : 'bg-red-50',
+      color: totalProfit >= 0 ? 'text-red-600' : 'text-blue-600',
+      bgColor: totalProfit >= 0 ? 'bg-red-50' : 'bg-blue-50',
       icon: totalProfit >= 0 ? '💰' : '📉',
     },
     {
@@ -57,26 +57,29 @@ export function AnalysisSummary({
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {metrics.map((metric) => (
-        <div
-          key={metric.label}
-          className={`${metric.bgColor} rounded-lg p-4 border border-slate-200`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-2xl">{metric.icon}</span>
-            <span className="text-xs text-slate-500">{metric.label}</span>
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간내 성과</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics.map((metric) => (
+          <div
+            key={metric.label}
+            className={`${metric.bgColor} rounded-lg p-4 border border-slate-200`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl">{metric.icon}</span>
+              <span className="text-xs text-slate-500">{metric.label}</span>
+            </div>
+            <div className="flex items-baseline">
+              <span className={`text-2xl font-bold ${metric.color}`}>
+                {metric.value}
+              </span>
+              {metric.suffix && (
+                <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
+              )}
+            </div>
           </div>
-          <div className="flex items-baseline">
-            <span className={`text-2xl font-bold ${metric.color}`}>
-              {metric.value}
-            </span>
-            {metric.suffix && (
-              <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
-            )}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
