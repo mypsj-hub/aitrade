@@ -23,15 +23,6 @@ interface HourStats {
   avgProfit: number;
 }
 
-function formatCurrency(value: number): string {
-  if (Math.abs(value) >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
-  } else if (Math.abs(value) >= 1000) {
-    return `${(value / 1000).toFixed(0)}K`;
-  }
-  return value.toFixed(0);
-}
-
 export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
   // 거래유형별 통계
   const tradeTypeStats = useMemo<TradeTypeStats[]>(() => {

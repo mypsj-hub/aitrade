@@ -7,10 +7,10 @@
 
 ## 📌 현재 상태
 
-**버전**: 2.0.2-analysis-enhancement
-**현재 Phase**: Analysis 페이지 전면 개선 완료
-**다음 작업**: Phase 4 - Portfolio 페이지 Realtime 기능
-**마지막 업데이트**: 2025-10-16 15:30
+**버전**: 2.0.3-phase4-planning
+**현재 Phase**: Phase 4 계획 수립 완료
+**다음 작업**: Phase 4A - Portfolio 페이지 필수 컴포넌트 구현
+**마지막 업데이트**: 2025-10-16 16:00
 
 ---
 
@@ -880,22 +880,432 @@ const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
 
 ---
 
-## 💼 Phase 4: Portfolio 페이지 (Realtime)
+## 💼 Phase 4: Portfolio 페이지 (하이브리드 구성) 📋 계획 완료
 
-> **목표**: 실시간 관제실 완성
+> **목표**: AI CIO 전략 중심 포트폴리오 관리 페이지
+> **핵심 전략**: 비용 Zero + cio_reports 중심 설계
 > **예상 기간**: 2-3일
-> **상태**: 대기 중
+> **상태**: 📋 계획 수립 완료
+
+### [2025-10-16 16:00] Phase 4 계획 수립 완료
+
+**🎯 설계 원칙**:
+- ❌ Supabase Realtime 구독 (비용 발생)
+- ✅ SWR refreshInterval 전략 (5-60초, 비용 Zero)
+- ✅ cio_reports 테이블 데이터를 시각적으로 표현
+- ✅ 하이브리드 레이아웃 (전략 중심 + 포트폴리오 현황 + 실적 트렌드)
+
+**📋 컴포넌트 설계** (7개):
+
+#### Phase 4A - 필수 컴포넌트 (4개)
+
+1. **CIOInsightBanner.tsx** (NEW)
+   - 목적: 최신 AI CIO 전략 하이라이트 (상단 배너)
+   - 데이터: cio_reports (report_date, title, cio_latest_rationale)
+   - 새로고침: SWR 5초
+   - UI: 그라디언트 배경 (indigo-500 → purple-600), 전략 200자 요약, 날짜 배지
+
+2. **PerformanceGauge.tsx** (NEW)
+   - 목적: 누적 수익률을 게이지 차트로 시각화
+   - 데이터:
+     * portfolio_summary (누적수익률, 일일수익률, 총순자산)
+     * trade_history (승률 계산)
+   - 새로고침: SWR 5초
+   - UI: Recharts RadialBarChart (반원 게이지), 목표 10% 기준 색상 변경
+   - 3개 지표 카드: 누적수익률, 승률, 일일수익률
+
+3. **CIOSelfCritique.tsx** (NEW)
+   - 목적: AI의 자가 평가를 3컬럼으로 시각화
+   - 데이터: cio_reports (self_critique JSONB)
+   - JSONB 구조 파싱:
+     ```json
+     {
+       "strengths": ["강점 1", "강점 2"],
+       "weaknesses": ["약점 1", "약점 2"],
+       "lessons_learned": ["교훈 1", "교훈 2"]
+     }
+     ```
+   - 새로고침: SWR 30초
+   - UI: 3컬럼 그리드
+     * Strengths: ✅ 초록 배경 (green-50)
+     * Weaknesses: ⚠️ 노랑 배경 (yellow-50)
+     * Lessons: 💡 파랑 배경 (blue-50)
+
+4. **PortfolioComposition.tsx** (MODIFIED)
+   - 목적: 현재 포트폴리오 구성 비율 (도넛 차트)
+   - 데이터: portfolio_summary (원화잔고, 총코인가치)
+   - 비율 계산: 원화 vs 코인 %
+   - 새로고침: SWR 5초
+   - UI: Recharts PieChart (도넛), 원화=파랑, 코인=빨강, 중앙에 총자산 표시
+
+#### Phase 4B - 부가 컴포넌트 (3개)
+
+5. **StrategyTimeline.tsx** (NEW)
+   - 목적: 최근 7일 CIO 리포트를 타임라인으로 표시
+   - 데이터: cio_reports (DAILY, 최근 7일, report_date, title, market_summary)
+   - 새로고침: SWR 30초
+   - UI: 세로 타임라인 (점선 + 원형 마커), 좌측 sticky, 클릭 시 펼침
+
+6. **MarketOutlookCard.tsx** (NEW)
+   - 목적: AI CIO의 시장 전망 표시
+   - 데이터: cio_reports (outlook, report_date)
+   - 새로고침: SWR 30초
+   - UI: 그라디언트 카드 (amber-50 → orange-50), 전문 표시 (whitespace-pre-wrap)
+
+7. **RecentReportsTable.tsx** (NEW)
+   - 목적: 최근 리포트 목록 및 상세 보기
+   - 데이터: cio_reports (최근 30일, report_date, report_type, title, full_content_md)
+   - 새로고침: SWR 60초
+   - UI: TanStack Table, DAILY/WEEKLY/MONTHLY 필터, 행 클릭 시 마크다운 모달
+   - 필요 패키지: `react-markdown`, `remark-gfm`
+
+**📐 레이아웃 구조**:
+```
+데스크톱 (lg 이상):
+┌─────────────────────────────────────────┐
+│ CIOInsightBanner (전체 너비)              │
+└─────────────────────────────────────────┘
+┌─────────────┬───────────────────────────┐
+│ Strategy    │ PerformanceGauge (2컬럼)   │
+│ Timeline    ├───────────────────────────┤
+│ (1컬럼,     │ CIOSelfCritique (3컬럼)    │
+│  sticky)    ├──────────┬────────────────┤
+│             │ Market   │ Portfolio      │
+│             │ Outlook  │ Composition    │
+│             ├──────────┴────────────────┤
+│             │ RecentReportsTable        │
+└─────────────┴───────────────────────────┘
+
+모바일 (sm 이하):
+세로 스택 (CIOInsightBanner → PerformanceGauge →
+          CIOSelfCritique → PortfolioComposition →
+          MarketOutlook → StrategyTimeline →
+          RecentReportsTable)
+```
+
+**⚙️ SWR 새로고침 전략**:
+- **중요 데이터** (5초): CIOInsightBanner, PerformanceGauge, PortfolioComposition
+- **일반 데이터** (30초): StrategyTimeline, MarketOutlookCard, CIOSelfCritique
+- **리포트 목록** (60초): RecentReportsTable
+
+**📦 필요 패키지**:
+```bash
+npm install react-markdown remark-gfm
+```
+(full_content_md 마크다운 렌더링용, 나머지는 이미 설치됨)
+
+**🎨 데이터 소스**:
+- **cio_reports** (주요):
+  - report_date, report_type, title
+  - cio_latest_rationale, outlook
+  - market_summary, performance_review
+  - self_critique (JSONB)
+  - full_content_md
+- **portfolio_summary**:
+  - 누적수익률, 일일수익률
+  - 원화잔고, 총코인가치, 총순자산
+- **trade_history**:
+  - 수익금 (승률 계산용)
+
+**💡 기존 구성안 vs 개선안 비교**:
+
+| 항목 | 기존 구성안 | 개선안 (하이브리드) |
+|------|-------------|---------------------|
+| **RealtimeStatusBanner** | Supabase Realtime 구독 (비용) | CIOInsightBanner (SWR 5초) |
+| **PortfolioDonutChart** | 보유 자산 비중 | ✅ PortfolioComposition (유지, 원화 vs 코인) |
+| **LiveHoldingsTable** | Realtime 보유 내역 | ❌ 제거 (Dashboard에 이미 존재) |
+| **WeightComparisonChart** | 목표 vs 실제 비중 | ❌ 제거 (cio_reports에 데이터 없음) |
+| **CIOInsightBanner** | - | ✅ 신규 (전략 하이라이트) |
+| **StrategyTimeline** | - | ✅ 신규 (7일 리포트 타임라인) |
+| **PerformanceGauge** | - | ✅ 신규 (수익률 게이지) |
+| **CIOSelfCritique** | - | ✅ 신규 (AI 자가 평가) |
+| **MarketOutlookCard** | - | ✅ 신규 (시장 전망) |
+| **RecentReportsTable** | - | ✅ 신규 (리포트 목록 + 마크다운) |
+
+**🔜 다음 작업**:
+- Phase 4A 구현 시작: CIOInsightBanner, PerformanceGauge, CIOSelfCritique, PortfolioComposition
+
+**📝 문서 업데이트**:
+- ✅ DASHBOARD_GUIDE.md 업데이트 (Phase 4 상세 설계)
+- ✅ DASHBOARD_CHANGELOG.md 업데이트 (Phase 4 계획 기록)
+
+---
+
+### [2025-10-16 18:00] Phase 4A 완료 ✅
+
+**✅ 완료 항목**:
+- [x] 4A.1. react-markdown, remark-gfm 패키지 설치
+- [x] 4A.2. CIOInsightBanner.tsx 생성 (최신 전략 배너)
+- [x] 4A.3. PerformanceGauge.tsx 생성 (수익률 게이지 차트)
+- [x] 4A.4. CIOSelfCritique.tsx 생성 (AI 자가 평가 3컬럼)
+- [x] 4A.5. PortfolioComposition.tsx 생성 (도넛 차트)
+- [x] 4A.6. PortfolioDateSelector.tsx 생성 (날짜 선택기)
+- [x] 4A.7. portfolio/page.tsx 레이아웃 구성 (필수 컴포넌트 통합)
+- [x] 4A.8. Context API 제거 및 Props 기반 아키텍처로 전환
+- [x] 4A.9. Supabase timestamp 쿼리 버그 수정
+- [x] 4A.10. 배포 준비 완료
+
+**📝 생성된 파일** (5개):
+1. `components/CIOInsightBanner.tsx` - AI CIO 최신 전략 배너
+2. `components/PerformanceGauge.tsx` - 누적 수익률 게이지 차트
+3. `components/CIOSelfCritique.tsx` - AI 자가 평가 (강점/약점/교훈)
+4. `components/PortfolioComposition.tsx` - 포트폴리오 구성 도넛 차트
+5. `components/PortfolioDateSelector.tsx` - 날짜 선택 컴포넌트
+
+**📝 수정된 파일**:
+- `app/portfolio/page.tsx` - 4개 컴포넌트 통합, useState 날짜 관리
+- `package.json` / `package-lock.json` - react-markdown, remark-gfm 추가
+
+**🎨 주요 기능**:
+
+#### 1. CIOInsightBanner
+- AI CIO의 최신 전략을 시각적으로 하이라이트
+- 그라디언트 배경 (indigo → purple)
+- 전략 내용 요약 (200자) + "전체 내용 보기" 토글 버튼
+- useState로 확장/축소 기능 구현
+- SWR 5초 간격 새로고침
+
+```typescript
+const [showFullContent, setShowFullContent] = useState(false);
+const displayContent = showFullContent ? data.rationale : shortRationale;
+
+<button onClick={() => setShowFullContent(!showFullContent)}>
+  {showFullContent ? '← 간략히 보기' : '전체 내용 보기 →'}
+</button>
+```
+
+#### 2. PerformanceGauge
+- Recharts RadialBarChart로 누적 수익률 게이지 시각화
+- 0-100% 범위, 목표 10% 기준으로 색상 변경
+- 3개 지표 카드: 누적수익률, 승률, 일일수익률
+- 만원 단위 표시로 Dashboard와 통일
+- portfolio_summary + trade_history 데이터 통합
+
+```typescript
+// 승률 계산
+const recentTrades = await supabase
+  .from('trade_history')
+  .select('수익금')
+  .gte('거래일시', thirtyDaysAgo.toISOString())
+  .not('수익금', 'is', null);
+
+const closedTrades = recentTrades.data?.filter(
+  (t: { 수익금: number | null }) => t.수익금 !== null && t.수익금 !== 0
+) || [];
+
+const wins = closedTrades.filter((t: { 수익금: number }) => t.수익금 > 0).length;
+const winRate = closedTrades.length > 0 ? (wins / closedTrades.length) * 100 : 0;
+```
+
+#### 3. CIOSelfCritique
+- AI의 자가 평가를 3컬럼으로 시각화
+- 강점 (✅ 초록), 약점 (⚠️ 노랑), 교훈 (💡 파랑)
+- react-markdown으로 마크다운 렌더링
+- SWR 30초 간격 새로고침
+
+```typescript
+interface SelfCritique {
+  best_decision: string;
+  areas_for_improvement: string;
+  strategy_consistency: string;
+}
+
+// 마크다운 렌더링
+<ReactMarkdown remarkPlugins={[remarkGfm]}>
+  {data.best_decision}
+</ReactMarkdown>
+```
+
+#### 4. PortfolioComposition
+- 원화 vs 코인 비율 도넛 차트 (Recharts PieChart)
+- 중앙에 총자산 표시 (absolute positioning)
+- 하단 Legend에 개별 금액 표시 (원화 303만원, 코인 44만원)
+- 상세 정보 카드 2개 (파랑 배경 원화, 빨강 배경 코인)
+
+```typescript
+<Legend
+  verticalAlign="bottom"
+  formatter={(value, entry: any) => {
+    const itemData = chartData.find(d => d.name === entry.value);
+    return (
+      <span className="text-sm text-slate-700">
+        {value} {itemData ? `${(itemData.value / 10000).toFixed(1)}만원` : ''}
+      </span>
+    );
+  }}
+/>
+
+{/* 중앙 총자산 표시 */}
+<div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+  <div className="text-2xl font-bold">{(data.totalAsset / 10000).toFixed(0)}</div>
+  <div className="text-xs text-slate-500">총자산 (만원)</div>
+</div>
+```
+
+#### 5. PortfolioDateSelector
+- input type="date"로 날짜 선택 (Analysis 탭과 동일한 UX)
+- 최대 날짜: 오늘 (max 속성)
+- date-fns로 날짜 포맷팅
+
+```typescript
+<input
+  type="date"
+  value={format(selectedDate, 'yyyy-MM-dd')}
+  onChange={(e) => onDateChange(new Date(e.target.value))}
+  max={format(new Date(), 'yyyy-MM-dd')}
+  className="px-4 py-2 border rounded-lg"
+/>
+```
+
+**🐛 해결된 주요 문제들**:
+
+#### 1. Context API 의존성 제거
+**문제**: 모든 컴포넌트가 존재하지 않는 `usePortfolioDate()` Context를 사용
+**해결**: Props 기반 아키텍처로 전환
+```typescript
+// Before
+const { selectedDate } = usePortfolioDate();
+
+// After
+export function PerformanceGauge({ selectedDate }: { selectedDate: Date }) {
+  // ...
+}
+```
+
+#### 2. Supabase 406 Not Acceptable 에러
+**문제**: PostgREST가 Korean column names + `.single()`을 처리하지 못함
+**해결**: `.limit(1)` + 배열 접근으로 변경
+```typescript
+// Before
+.eq('날짜', dateString).single()
+
+// After
+.eq('날짜', dateString).limit(1)
+const data = rawDataArray[0];
+```
+
+#### 3. Invalid Time Value 에러
+**문제**: SSR/CSR 불일치로 date 초기화 전 format() 호출
+**해결**: 날짜 유효성 검증 추가
+```typescript
+const dateKey = selectedDate instanceof Date && !isNaN(selectedDate.getTime())
+  ? format(selectedDate, 'yyyy-MM-dd')
+  : 'invalid-date';
+```
+
+#### 4. Timestamp vs Date 비교 실패 (CRITICAL)
+**문제**: `portfolio_summary.날짜`가 `timestamp with time zone` 타입
+- 저장 형식: `2025-10-15T15:08:38.625661+00:00`
+- 쿼리: `.eq('날짜', '2025-10-15')` → 매치 실패
+**해결**: 날짜 범위 쿼리로 변경
+```typescript
+const dateString = format(selectedDate, 'yyyy-MM-dd');
+const startOfDay = `${dateString}T00:00:00`;
+const endOfDay = `${dateString}T23:59:59`;
+
+const { data } = await supabase
+  .from('portfolio_summary')
+  .select('*')
+  .gte('날짜', startOfDay)
+  .lte('날짜', endOfDay)
+  .order('날짜', { ascending: false })
+  .limit(1);
+```
+
+#### 5. Legend 표시 오류
+**문제**: 모든 legend 항목이 "총자산 347만원"으로 표시
+**해결**: Legend를 차트 하단으로 이동 + formatter로 개별 값 표시
+```typescript
+// Before: Legend가 중앙에 총자산만 표시
+<Legend formatter={() => <div>총자산 {total}만원</div>} />
+
+// After: Legend를 하단으로, formatter에서 개별 값 계산
+<Legend
+  verticalAlign="bottom"
+  formatter={(value, entry) => {
+    const itemData = chartData.find(d => d.name === entry.value);
+    return `${value} ${itemData?.value / 10000}만원`;
+  }}
+/>
+```
+
+**📐 레이아웃 구조**:
+```
+portfolio/page.tsx:
+├── PortfolioDateSelector (날짜 선택)
+├── CIOInsightBanner (전체 너비)
+├── 2컬럼 그리드
+│   ├── PerformanceGauge (좌측)
+│   └── PortfolioComposition (우측)
+└── CIOSelfCritique (전체 너비, 3컬럼)
+```
+
+**⚙️ 기술 구현**:
+- **상태 관리**: useState로 selectedDate 관리 (Context 제거)
+- **데이터 패칭**: SWR (5초/30초 간격 새로고침)
+- **날짜 처리**: date-fns (format, isValid 등)
+- **차트**: Recharts (RadialBarChart, PieChart)
+- **마크다운**: react-markdown + remark-gfm
+- **Props Drilling**: portfolio/page.tsx → 4개 컴포넌트에 selectedDate 전달
+
+**✅ 검증 완료**:
+- ✅ 날짜 선택기 정상 작동 (input type="date")
+- ✅ CIO 배너 확장/축소 버튼 정상 작동
+- ✅ 성과 게이지 데이터 정상 표시 (누적수익률, 승률, 일일수익률)
+- ✅ AI 자가 평가 마크다운 렌더링 정상
+- ✅ 포트폴리오 구성 차트 + Legend 정상 표시 (총자산 347만, 원화 303만, 코인 44만)
+- ✅ 날짜별 데이터 필터링 정상 (2025-10-15, 2025-10-16 등)
+- ✅ Timestamp 범위 쿼리 정상 작동
+- ✅ 로컬 개발 서버 에러 없음 (HMR 정상)
+
+**📊 개선 효과**:
+- **AI CIO 전략 가시성**: 최신 전략을 시각적으로 하이라이트
+- **성과 한눈에 파악**: 게이지 차트로 직관적인 수익률 확인
+- **투명한 AI**: 자가 평가로 AI의 의사결정 과정 공개
+- **포트폴리오 비율 파악**: 원화/코인 비율을 도넛 차트로 시각화
+- **날짜별 비교**: 날짜 선택기로 과거 데이터 조회 가능
+
+**🎯 사용자 피드백 반영**:
+1. ✅ "성과게이지 포트폴리오구성 데이터가 안나와" → Timestamp 범위 쿼리로 해결
+2. ✅ "날짜선택을 드롭박스로 하면 100개가 생긴다" → input type="date"로 변경
+3. ✅ "전체보기 button 반응이 없어" → useState 토글 기능 구현
+4. ✅ "legend 표시가 의도한바와 맞지않아" → Legend formatter 수정
+
+**📦 추가된 패키지**:
+```json
+{
+  "react-markdown": "^9.0.1",
+  "remark-gfm": "^4.0.0"
+}
+```
+
+**🔜 다음 작업**:
+- Phase 4B: StrategyTimeline, MarketOutlookCard, RecentReportsTable 구현 (선택 사항)
+- 또는 Phase 5: 외부 통합 (TradingView, Alternative.me API)
+
+---
 
 ### 작업 체크리스트
-- [ ] 4.1. useRealtimeHoldings.ts 훅 생성
-- [ ] 4.2. Supabase Realtime 테스트
-- [ ] 4.3. RealtimeStatusBanner.tsx 생성
-- [ ] 4.4. PortfolioDonutChart.tsx 생성
-- [ ] 4.5. LiveHoldingsTable.tsx 생성
-- [ ] 4.6. WeightComparisonChart.tsx 생성
-- [ ] 4.7. Framer Motion 애니메이션 적용
-- [ ] 4.8. 실시간 업데이트 테스트
-- [ ] 4.9. 빌드 + 배포
+
+**Phase 4A - 필수 컴포넌트** ✅:
+- [x] 4A.1. react-markdown, remark-gfm 패키지 설치
+- [x] 4A.2. CIOInsightBanner.tsx 생성 (최신 전략 배너)
+- [x] 4A.3. PerformanceGauge.tsx 생성 (수익률 게이지 차트)
+- [x] 4A.4. CIOSelfCritique.tsx 생성 (AI 자가 평가 3컬럼)
+- [x] 4A.5. PortfolioComposition.tsx 생성 (도넛 차트)
+- [x] 4A.6. PortfolioDateSelector.tsx 생성 (날짜 선택기)
+- [x] 4A.7. portfolio/page.tsx 레이아웃 구성 (필수 컴포넌트 통합)
+- [x] 4A.8. Context API 제거 및 Props 기반 전환
+- [x] 4A.9. Timestamp 쿼리 버그 수정
+- [x] 4A.10. 로컬 테스트 완료 (에러 없음)
+
+**Phase 4B - 부가 컴포넌트**:
+- [ ] 4B.1. StrategyTimeline.tsx 생성 (7일 리포트 타임라인)
+- [ ] 4B.2. MarketOutlookCard.tsx 생성 (시장 전망 카드)
+- [ ] 4B.3. RecentReportsTable.tsx 생성 (리포트 목록 + 마크다운 모달)
+- [ ] 4B.4. portfolio/page.tsx 최종 레이아웃 (7개 컴포넌트 통합)
+- [ ] 4B.5. 반응형 테스트 (모바일, 태블릿, 데스크톱)
+- [ ] 4B.6. 빌드 + 배포 (최종)
 
 ---
 
@@ -944,11 +1354,13 @@ const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
 | Phase 3 | ✅ 완료 | 100% | 2025-10-15 | 2025-10-15 | 3시간 |
 | Dashboard 개선 | ✅ 완료 | 100% | 2025-10-16 | 2025-10-16 | 3시간 |
 | Analysis 개선 | ✅ 완료 | 100% | 2025-10-16 | 2025-10-16 | 3시간 |
-| Phase 4 | ⏳ 대기 | 0% | - | - | - |
+| Phase 4 계획 | ✅ 완료 | 100% | 2025-10-16 | 2025-10-16 | 0.5시간 |
+| Phase 4A | ⏳ 대기 | 0% | - | - | - |
+| Phase 4B | ⏳ 대기 | 0% | - | - | - |
 | Phase 5 | ⏳ 대기 | 0% | - | - | - |
 | Phase 6 | ⏳ 대기 | 0% | - | - | - |
 
-**전체 진행률**: 67% (Phase 0-3 + Dashboard 개선 + Analysis 개선 완료, Phase 4-6 남음)
+**전체 진행률**: 70% (Phase 0-3 + 개선 2회 + Phase 4 계획 완료, Phase 4 구현 + 5-6 남음)
 
 ---
 
@@ -981,7 +1393,7 @@ const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
 
 **📌 이 문서는 매 작업마다 즉시 업데이트해야 합니다.**
 
-**최종 업데이트**: 2025-10-16 15:30
+**최종 업데이트**: 2025-10-16 16:00
 
 ---
 
