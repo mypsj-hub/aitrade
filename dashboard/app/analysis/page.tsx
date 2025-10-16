@@ -8,22 +8,12 @@ import { AnalysisFilters } from '@/components/AnalysisFilters';
 import { AnalysisSummary } from '@/components/AnalysisSummary';
 import { EnhancedTradesTable } from '@/components/EnhancedTradesTable';
 import { PnlByAssetChart } from '@/components/PnlByAssetChart';
-
-interface Trade {
-  id: number;
-  코인이름: string;
-  거래유형: string;
-  거래금액: number;
-  수익금: number | null;
-  거래일시: string;
-  AI사고과정: string | null;
-  주요지표: Record<string, unknown> | null;
-}
+import type { Trade } from '@/lib/types';
 
 async function fetchAllTrades(): Promise<Trade[]> {
   const { data } = await supabase
     .from('trade_history')
-    .select('id, 코인이름, 거래유형, 거래금액, 수익금, 거래일시, AI사고과정, 주요지표')
+    .select('id, 코인이름, 거래유형, 거래금액, 수익금, 거래일시, ai_thinking_process, 주요지표')
     .order('거래일시', { ascending: false })
     .limit(500);
 

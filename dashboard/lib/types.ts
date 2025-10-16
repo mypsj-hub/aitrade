@@ -40,6 +40,18 @@ export interface TradeHistory {
   주요지표: Record<string, unknown>; // JSONB
 }
 
+// Analysis 페이지용 Trade 타입
+export interface Trade {
+  id: number;
+  코인이름: string;
+  거래유형: string;
+  거래금액: number;
+  수익금: number | null;
+  거래일시: string;
+  ai_thinking_process: string | null;
+  주요지표: Record<string, unknown> | null;
+}
+
 export interface PortfolioSummary {
   날짜: string;
   총포트폴리오가치: number;

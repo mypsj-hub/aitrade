@@ -12,17 +12,7 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-
-interface Trade {
-  id: number;
-  코인이름: string;
-  거래유형: string;
-  거래금액: number;
-  수익금: number | null;
-  거래일시: string;
-  ai_thinking_process: string | null;
-  주요지표: Record<string, unknown> | null;
-}
+import type { Trade } from '@/lib/types';
 
 interface EnhancedTradesTableProps {
   trades: Trade[];
