@@ -37,7 +37,7 @@ export function PerformanceChart({ data }: Props) {
     return `${(value / 1000000).toFixed(2)}M`;
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number; payload: { 원본날짜: string } }> }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-slate-200 rounded shadow-lg">
