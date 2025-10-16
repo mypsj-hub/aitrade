@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,7 +20,7 @@ interface Trade {
   거래금액: number;
   수익금: number | null;
   거래일시: string;
-  AI사고과정: string | null;
+  ai_thinking_process: string | null;
   주요지표: Record<string, unknown> | null;
 }
 
@@ -30,15 +30,13 @@ interface EnhancedTradesTableProps {
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'KRW',
     maximumFractionDigits: 0,
   }).format(value);
 }
 
 function formatDateTime(dateStr: string): string {
   const date = new Date(dateStr);
-  return format(date, 'MM/dd HH:mm');
+  return format(date, 'yyyy-MM-dd HH:mm:ss');
 }
 
 export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
@@ -173,8 +171,8 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
             {table.getRowModel().rows.map((row) => (
-              <>
-                <tr key={row.id} className="hover:bg-slate-50 transition">
+              <React.Fragment key={row.id}>
+                <tr className="hover:bg-slate-50 transition">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3 text-sm text-slate-700">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -187,13 +185,13 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
                     <td colSpan={columns.length} className="bg-slate-50 px-4 py-4">
                       <div className="space-y-3">
                         {/* AI 사고 과정 */}
-                        {row.original.AI사고과정 && (
+                        {row.original.ai_thinking_process && (
                           <div>
                             <h4 className="text-sm font-semibold text-slate-700 mb-2">
                               💭 AI 사고 과정
                             </h4>
                             <p className="text-sm text-slate-600 whitespace-pre-wrap bg-white p-3 rounded border border-slate-200">
-                              {row.original.AI사고과정}
+                              {row.original.ai_thinking_process}
                             </p>
                           </div>
                         )}
@@ -222,7 +220,7 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>

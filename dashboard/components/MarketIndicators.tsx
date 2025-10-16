@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { supabase } from '@/lib/supabase';
 
 interface MarketData {
   fearGreedIndex: number;
@@ -9,24 +10,52 @@ interface MarketData {
   kimchiPremium: number;
 }
 
-export function MarketIndicators() {
-  const [data, setData] = useState<MarketData>({
-    fearGreedIndex: 50,
-    fearGreedLabel: '중립',
-    btcDominance: 54.2,
-    kimchiPremium: 0.5,
-  });
+async function fetchMarketIndicators(): Promise<MarketData> {
+  // system_status에서 실시간 데이터 조회
+  const { data: fearGreed } = await supabase
+    .from('system_status')
+    .select('status_value')
+    .eq('status_key', 'fear_greed_index')
+    .single();
 
-  // TODO: Phase 5에서 실제 API 연동
-  useEffect(() => {
-    // 임시 데이터 (Phase 5에서 Alternative.me, CoinGecko API 연동)
-    setData({
-      fearGreedIndex: 52,
-      fearGreedLabel: '중립',
-      btcDominance: 54.3,
-      kimchiPremium: 0.8,
-    });
-  }, []);
+  const { data: btcDom } = await supabase
+    .from('system_status')
+    .select('status_value')
+    .eq('status_key', 'btc_dominance')
+    .single();
+
+  const { data: kimchi } = await supabase
+    .from('system_status')
+    .select('status_value')
+    .eq('status_key', 'kimchi_premium')
+    .single();
+
+  const fearGreedIndex = fearGreed ? parseInt(fearGreed.status_value) : 50;
+  const btcDominance = btcDom ? parseFloat(btcDom.status_value) : 50;
+  const kimchiPremium = kimchi ? parseFloat(kimchi.status_value) : 0;
+
+  // 공포탐욕지수 레이블 결정
+  let fearGreedLabel = '중립';
+  if (fearGreedIndex < 25) fearGreedLabel = '극단적 공포';
+  else if (fearGreedIndex < 45) fearGreedLabel = '공포';
+  else if (fearGreedIndex < 55) fearGreedLabel = '중립';
+  else if (fearGreedIndex < 75) fearGreedLabel = '탐욕';
+  else fearGreedLabel = '극단적 탐욕';
+
+  return {
+    fearGreedIndex,
+    fearGreedLabel,
+    btcDominance,
+    kimchiPremium,
+  };
+}
+
+export function MarketIndicators() {
+  const { data, isLoading } = useSWR<MarketData>(
+    'market-indicators',
+    fetchMarketIndicators,
+    { refreshInterval: 60000 } // 60초마다 갱신
+  );
 
   const getFearGreedColor = (index: number) => {
     if (index < 25) return { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
@@ -35,6 +64,19 @@ export function MarketIndicators() {
     if (index < 75) return { bg: 'bg-lime-50', text: 'text-lime-600', border: 'border-lime-200' };
     return { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-200' };
   };
+
+  if (isLoading || !data) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-bold text-slate-800 mb-4">🌐 시장 지표</h2>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse h-20 bg-slate-100 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const fearGreedColors = getFearGreedColor(data.fearGreedIndex);
 
@@ -59,7 +101,7 @@ export function MarketIndicators() {
     },
     {
       label: '김치 프리미엄',
-      value: data.kimchiPremium > 0 ? '+' + data.kimchiPremium.toFixed(1) : data.kimchiPremium.toFixed(1),
+      value: data.kimchiPremium > 0 ? '+' + data.kimchiPremium.toFixed(2) : data.kimchiPremium.toFixed(2),
       suffix: '%',
       sublabel: '국내외 가격차',
       icon: '🌏',
@@ -101,7 +143,7 @@ export function MarketIndicators() {
       </div>
 
       <div className="mt-4 text-xs text-slate-400 text-center">
-        Phase 5에서 실시간 API 연동 예정
+        60초마다 자동 갱신 (Process1에서 5분마다 업데이트)
       </div>
     </div>
   );

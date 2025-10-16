@@ -1,4 +1,5 @@
 import type { HoldingStatus } from '@/lib/types';
+import { formatCurrency } from '@/lib/utils/formatters';
 
 interface Props {
   holdings: HoldingStatus[];
@@ -8,8 +9,6 @@ export function HoldingsTable({ holdings }: Props) {
   if (holdings.length === 0) {
     return <p className="text-slate-500">보유 자산이 없습니다.</p>;
   }
-
-  const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
 
   return (
     <div className="overflow-x-auto">
@@ -29,7 +28,7 @@ export function HoldingsTable({ holdings }: Props) {
             <tr key={holding.코인이름} className="border-b border-slate-200 hover:bg-slate-50">
               <td className="px-4 py-3 font-semibold text-slate-800">{holding.코인이름}</td>
               <td className="px-4 py-3 text-right text-slate-600">{holding.보유수량.toFixed(4)}</td>
-              <td className="px-4 py-3 text-right text-slate-900">₩{formatNumber(holding.평가금액)}</td>
+              <td className="px-4 py-3 text-right text-slate-900">{formatCurrency(holding.평가금액)}</td>
               <td className={`px-4 py-3 text-right font-bold ${holding.수익률 >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
                 {holding.수익률.toFixed(2)}%
               </td>

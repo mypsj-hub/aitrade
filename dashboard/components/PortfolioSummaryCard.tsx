@@ -1,4 +1,5 @@
 import type { PortfolioSummary } from '@/lib/types';
+import { formatDate, formatCurrencyWithUnit } from '@/lib/utils/formatters';
 
 interface Props {
   summary: PortfolioSummary | null;
@@ -13,10 +14,6 @@ export function PortfolioSummaryCard({ summary }: Props) {
     );
   }
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('ko-KR').format(Math.round(num));
-  };
-
   const formatPercent = (num: number) => {
     return num.toFixed(2);
   };
@@ -24,9 +21,9 @@ export function PortfolioSummaryCard({ summary }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
-        title="총 포트폴리오 가치"
-        value={`₩${formatNumber(summary.총포트폴리오가치)}`}
-        subtitle={summary.날짜}
+        title="총순자산"
+        value={formatCurrencyWithUnit(summary.총포트폴리오가치)}
+        subtitle={formatDate(summary.날짜)}
       />
       <MetricCard
         title="일일 수익률"
@@ -40,8 +37,8 @@ export function PortfolioSummaryCard({ summary }: Props) {
       />
       <MetricCard
         title="원화 잔고"
-        value={`₩${formatNumber(summary.원화잔고)}`}
-        subtitle={`코인: ₩${formatNumber(summary.총코인가치)}`}
+        value={formatCurrencyWithUnit(summary.원화잔고)}
+        subtitle={`코인: ${formatCurrencyWithUnit(summary.총코인가치)}`}
       />
     </div>
   );

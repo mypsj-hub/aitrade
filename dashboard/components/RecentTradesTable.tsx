@@ -1,4 +1,5 @@
 import type { TradeHistory } from '@/lib/types';
+import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 
 interface Props {
   trades: TradeHistory[];
@@ -8,8 +9,6 @@ export function RecentTradesTable({ trades }: Props) {
   if (trades.length === 0) {
     return <p className="text-slate-500">거래 내역이 없습니다.</p>;
   }
-
-  const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
 
   return (
     <div className="overflow-x-auto">
@@ -27,7 +26,7 @@ export function RecentTradesTable({ trades }: Props) {
         <tbody>
           {trades.map((trade) => (
             <tr key={trade.id} className="border-b border-slate-200 hover:bg-slate-50">
-              <td className="px-4 py-3 text-slate-600 text-xs">{trade.거래일시}</td>
+              <td className="px-4 py-3 text-slate-600 text-xs">{formatDateTime(trade.거래일시)}</td>
               <td className="px-4 py-3 font-semibold text-slate-800">{trade.코인이름}</td>
               <td className="px-4 py-3 text-center">
                 <span className={`px-2 py-1 text-xs rounded-full ${
@@ -37,7 +36,7 @@ export function RecentTradesTable({ trades }: Props) {
                 </span>
               </td>
               <td className="px-4 py-3 text-right text-slate-600">{trade.거래수량.toFixed(4)}</td>
-              <td className="px-4 py-3 text-right text-slate-900">₩{formatNumber(trade.거래금액)}</td>
+              <td className="px-4 py-3 text-right text-slate-900">{formatCurrency(trade.거래금액)}</td>
               <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{trade.거래사유}</td>
             </tr>
           ))}

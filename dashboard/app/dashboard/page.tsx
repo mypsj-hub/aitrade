@@ -5,11 +5,11 @@ import { PortfolioSummaryCard } from '@/components/PortfolioSummaryCard';
 import { SystemMetricsCard } from '@/components/SystemMetricsCard';
 import { CIOStrategyCard } from '@/components/CIOStrategyCard';
 import { KeyTradesCard } from '@/components/KeyTradesCard';
-import { MarketIndicators } from '@/components/MarketIndicators';
+import { MarketIndicatorsEnhanced } from '@/components/MarketIndicatorsEnhanced';
 import { QuickLinksCard } from '@/components/QuickLinksCard';
 import { HoldingsTable } from '@/components/HoldingsTable';
 import { RecentTradesTable } from '@/components/RecentTradesTable';
-import { PerformanceChart } from '@/components/PerformanceChart';
+import { PerformanceChartEnhanced } from '@/components/PerformanceChartEnhanced';
 import { MarketRegimeBadge } from '@/components/MarketRegimeBadge';
 
 export default function DashboardPage() {
@@ -74,15 +74,15 @@ export default function DashboardPage() {
         {/* 우측 컬럼: 외부 시장 정보 */}
         <div className="space-y-6">
           {/* 시장 지표 */}
-          <MarketIndicators />
+          <MarketIndicatorsEnhanced />
 
           {/* 빠른 링크 */}
           <QuickLinksCard />
 
-          {/* 수익률 차트 */}
+          {/* 총순자산 추이 차트 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">📊 누적 수익률 추이</h2>
-            <PerformanceChart data={data.summaryHistory} />
+            <h2 className="text-xl font-bold text-slate-800 mb-4">📊 총순자산 추이</h2>
+            <PerformanceChartEnhanced data={data.summaryHistory} />
           </div>
         </div>
       </div>
