@@ -85,6 +85,9 @@ dashboard/docs/
 chart_cache/
 debug_prompts/
 
+# Migration temporary files
+migration_temp/
+
 # Claude Code
 .claude/
 
