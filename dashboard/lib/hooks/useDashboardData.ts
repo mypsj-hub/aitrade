@@ -59,7 +59,8 @@ const fetcher = async (): Promise<DashboardData> => {
       const dailyMap = new Map<string, PortfolioSummary>();
       fallbackData?.forEach((item: PortfolioSummary) => {
         const dateKey = item.날짜.split('T')[0];
-        if (!dailyMap.has(dateKey) || item.날짜 > dailyMap.get(dateKey).날짜) {
+        const existing = dailyMap.get(dateKey);
+        if (!existing || item.날짜 > existing.날짜) {
           dailyMap.set(dateKey, item);
         }
       });
