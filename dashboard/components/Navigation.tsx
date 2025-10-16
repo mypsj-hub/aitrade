@@ -18,9 +18,9 @@ export function Navigation() {
   }, []);
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/analysis', label: 'Analysis', icon: '🔬' },
-    { href: '/portfolio', label: 'Portfolio', icon: '💼' },
+    { href: '/dashboard', label: '대시보드', icon: '📊' },
+    { href: '/analysis', label: '분석', icon: '🔬' },
+    { href: '/portfolio', label: '포트폴리오', icon: '💼' },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -35,7 +35,7 @@ export function Navigation() {
               <span className="text-white text-xl font-bold">AI</span>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-900">AI Trading Hub</h1>
+              <h1 className="text-lg font-bold text-slate-900">코인먹는AI</h1>
               <p className="text-xs text-slate-500">v2.0</p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export function Navigation() {
 
           {/* 우측: 마지막 업데이트 */}
           <div className="hidden md:flex flex-col items-end">
-            <span className="text-xs text-slate-500">Last Update</span>
+            <span className="text-xs text-slate-500">마지막 업데이트</span>
             <span className="text-xs font-medium text-slate-700">
               {lastUpdate.toLocaleTimeString('ko-KR', {
                 hour: '2-digit',

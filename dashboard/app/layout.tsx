@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Trading Hub v2.0",
-  description: "AI-powered cryptocurrency trading dashboard with real-time monitoring and analysis",
+  title: "코인먹는AI v2.0",
+  description: "AI 기반 암호화폐 자동매매 대시보드 - 실시간 모니터링 및 분석",
 };
 
 export default function RootLayout({
