@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
+import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 
 interface Trade {
   코인이름: string;
@@ -48,22 +49,6 @@ async function fetchKeyTrades(): Promise<KeyTrades> {
   const latest = trades[0];
 
   return { maxProfit, maxLoss, latest };
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'KRW',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export function KeyTradesCard() {
@@ -134,7 +119,7 @@ export function KeyTradesCard() {
                         {item.trade.코인이름} · {item.trade.거래유형}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {formatTime(item.trade.거래일시)}
+                        {formatDateTime(item.trade.거래일시)}
                       </div>
                     </>
                   ) : (

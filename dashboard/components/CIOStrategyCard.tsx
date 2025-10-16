@@ -56,9 +56,9 @@ export function CIOStrategyCard() {
     );
   }
 
-  // Rationale을 최대 200자로 제한
-  const shortRationale = data.rationale.length > 200
-    ? data.rationale.substring(0, 200) + '...'
+  // Rationale을 최대 600자로 제한 (확대)
+  const shortRationale = data.rationale.length > 600
+    ? data.rationale.substring(0, 600) + '...'
     : data.rationale;
 
   return (
@@ -72,9 +72,11 @@ export function CIOStrategyCard() {
         {data.title}
       </h3>
 
-      <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap leading-relaxed">
-        {shortRationale}
-      </p>
+      <div className="max-h-96 overflow-y-auto">
+        <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap leading-relaxed">
+          {shortRationale}
+        </p>
+      </div>
 
       <Link
         href="/analysis"
