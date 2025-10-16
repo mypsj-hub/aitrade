@@ -35,13 +35,14 @@
 
 import { useMemo } from 'react';
 import useSWR from 'swr';
+import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useFilterStore } from '@/lib/store/filterStore';
 import { AnalysisFilters } from '@/components/AnalysisFilters';
 import { AnalysisSummary } from '@/components/AnalysisSummary';
 import { EnhancedTradesTable } from '@/components/EnhancedTradesTable';
 import { PnlByAssetChart } from '@/components/PnlByAssetChart';
-import { PerformanceTrendChart } from '@/components/PerformanceTrendChart';
+import { PerformanceTrendChart, type DailyTradeSummary } from '@/components/PerformanceTrendChart';
 import { CoinStatsTable } from '@/components/CoinStatsTable';
 import { AIPatternAnalysis } from '@/components/AIPatternAnalysis';
 import type { Trade } from '@/lib/types';
@@ -51,9 +52,26 @@ async function fetchAllTrades(): Promise<Trade[]> {
     .from('trade_history')
     .select('id, 코인이름, 거래유형, 거래금액, 수익금, 거래일시, ai_thinking_process, 주요지표')
     .order('거래일시', { ascending: false })
-    .limit(500);
+    .limit(2000); // 증가: 500 → 2000 (전체 거래 내역 포함)
 
   return (data || []) as unknown as Trade[];
+}
+
+async function fetchDailySummary(
+  startDate: string,
+  endDate: string
+): Promise<DailyTradeSummary[]> {
+  const { data, error } = await supabase.rpc('get_daily_trade_summary', {
+    start_date: startDate,
+    end_date: endDate,
+  });
+
+  if (error) {
+    console.error('[fetchDailySummary] RPC error:', error);
+    return [];
+  }
+
+  return (data || []) as DailyTradeSummary[];
 }
 
 export default function AnalysisPage() {
@@ -61,6 +79,22 @@ export default function AnalysisPage() {
   const { data: allTrades, isLoading } = useSWR<Trade[]>(
     'all-trades',
     fetchAllTrades,
+    { refreshInterval: 300000 }
+  );
+
+  // 날짜 범위별 일별 손익 데이터 가져오기 (RPC 함수 사용)
+  const dailySummaryKey = useMemo(
+    () => `daily-summary-${format(new Date(filters.dateRange.start), 'yyyy-MM-dd')}-${format(new Date(filters.dateRange.end), 'yyyy-MM-dd')}`,
+    [filters.dateRange]
+  );
+
+  const { data: dailySummary } = useSWR<DailyTradeSummary[]>(
+    dailySummaryKey,
+    () =>
+      fetchDailySummary(
+        format(new Date(filters.dateRange.start), 'yyyy-MM-dd'),
+        format(new Date(filters.dateRange.end), 'yyyy-MM-dd')
+      ),
     { refreshInterval: 300000 }
   );
 
@@ -164,7 +198,7 @@ export default function AnalysisPage() {
 
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간별 누적 손익 추이</h2>
-              <PerformanceTrendChart trades={filteredTrades} />
+              <PerformanceTrendChart dailySummary={dailySummary || []} />
             </div>
           </div>
 

@@ -22,9 +22,14 @@ import { useEffect, useState } from 'react';
 
 export function Navigation() {
   const pathname = usePathname();
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // 클라이언트에서만 시간 표시 (Hydration 에러 방지)
+    setIsMounted(true);
+    setLastUpdate(new Date());
+
     // 1분마다 업데이트 시간 갱신
     const interval = setInterval(() => {
       setLastUpdate(new Date());
@@ -90,10 +95,12 @@ export function Navigation() {
           <div className="hidden md:flex flex-col items-end">
             <span className="text-xs text-slate-500">마지막 업데이트</span>
             <span className="text-xs font-medium text-slate-700">
-              {lastUpdate.toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {isMounted && lastUpdate
+                ? lastUpdate.toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
+                : '--:--'}
             </span>
           </div>
         </div>
