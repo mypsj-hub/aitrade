@@ -133,8 +133,8 @@ export function PortfolioComposition({ selectedDate }: PortfolioCompositionProps
             <Legend
               verticalAlign="bottom"
               height={36}
-              formatter={(value, entry: any) => {
-                const itemData = chartData.find(d => d.name === entry.value);
+              formatter={(value) => {
+                const itemData = chartData.find(d => d.name === value);
                 return (
                   <span className="text-sm text-slate-700">
                     {value} {itemData ? `${(itemData.value / 10000).toFixed(1)}만원` : ''}
