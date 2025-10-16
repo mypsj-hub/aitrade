@@ -40,6 +40,12 @@ export function QuickLinksCard() {
         { name: 'CoinGecko', url: 'https://www.coingecko.com', icon: '🦎' },
       ],
     },
+    {
+      category: '콘텐츠',
+      items: [
+        { name: '코인먹는AI', url: 'https://www.youtube.com/@코인먹는AI', icon: '🎥' },
+      ],
+    },
   ];
 
   return (

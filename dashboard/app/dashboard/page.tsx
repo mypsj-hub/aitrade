@@ -28,6 +28,7 @@
 'use client';
 
 import { useDashboardData } from '@/lib/hooks/useDashboardData';
+import { usePageViewCounter } from '@/lib/hooks/usePageViewCounter';
 import { PortfolioSummaryCard } from '@/components/PortfolioSummaryCard';
 import { SystemMetricsCard } from '@/components/SystemMetricsCard';
 import { CIOStrategyCard } from '@/components/CIOStrategyCard';
@@ -41,6 +42,17 @@ import { MarketRegimeBadge } from '@/components/MarketRegimeBadge';
 
 export default function DashboardPage() {
   const { data, isLoading, isError } = useDashboardData();
+  const { viewCount, isLoading: isCountLoading } = usePageViewCounter();
+
+  // 디버깅: 로드된 데이터 개수 확인
+  if (data?.summaryHistory) {
+    console.log('[Dashboard] summaryHistory loaded:', data.summaryHistory.length, 'rows');
+    console.log('[Dashboard] Date range:',
+      data.summaryHistory[0]?.날짜,
+      'to',
+      data.summaryHistory[data.summaryHistory.length - 1]?.날짜
+    );
+  }
 
   if (isLoading) {
     return (
@@ -72,6 +84,52 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* 유튜브 채널 배너 */}
+      <div className="mb-6 space-y-3">
+        <a
+          href="https://www.youtube.com/@코인먹는AI"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-[1.01]"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-white rounded-full p-3">
+                <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">코인먹는AI 유튜브 채널</h3>
+                <p className="text-sm text-red-100">AI 트레이딩 전략과 암호화폐 인사이트를 확인하세요!</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <span className="text-sm font-semibold">채널 방문</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        {/* 방문자 카운터 */}
+        <div className="flex justify-end">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg border border-slate-200">
+            <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <span className="text-sm text-slate-600">
+              총 방문:
+            </span>
+            <span className="text-sm font-bold text-slate-800">
+              {isCountLoading ? '...' : viewCount.toLocaleString()}회
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 페이지 헤더 */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -103,9 +161,6 @@ export default function DashboardPage() {
           {/* 시장 지표 */}
           <MarketIndicators />
 
-          {/* 빠른 링크 */}
-          <QuickLinksCard />
-
           {/* 총순자산 추이 차트 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-slate-800 mb-4">📊 총순자산 추이</h2>
@@ -130,6 +185,11 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold text-slate-800 mb-4">📜 최근 거래 내역</h2>
             <RecentTradesTable trades={data.recentTrades.slice(0, 20)} />
           </div>
+        </section>
+
+        {/* 빠른 링크 */}
+        <section>
+          <QuickLinksCard />
         </section>
       </div>
     </div>

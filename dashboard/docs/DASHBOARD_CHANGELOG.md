@@ -7,10 +7,10 @@
 
 ## 📌 현재 상태
 
-**버전**: 2.0.3-phase4-planning
-**현재 Phase**: Phase 4 계획 수립 완료
-**다음 작업**: Phase 4A - Portfolio 페이지 필수 컴포넌트 구현
-**마지막 업데이트**: 2025-10-16 16:00
+**버전**: 2.0.4-youtube-visitor-counter
+**현재 Phase**: YouTube 채널 통합 및 방문자 카운터 추가 완료
+**다음 작업**: GitHub 배포
+**마지막 업데이트**: 2025-10-16 19:30
 
 ---
 
@@ -1436,3 +1436,221 @@ portfolio/page.tsx:
 - ⏳ Supabase Realtime (Phase 4 예정)
 - ⏳ Lightweight Charts (Phase 5 예정)
 - ⏳ Framer Motion (Phase 6 예정)
+
+
+## 🎬 YouTube Channel & Visitor Counter Integration (2025-10-16)
+
+> **목표**: 유튜브 채널 홍보 및 방문자 카운터 추가
+> **실제 기간**: 1시간 (2025-10-16)
+> **상태**: ✅ 완료
+
+### [2025-10-16 19:30] YouTube 채널 및 방문자 카운터 추가 완료
+
+**✅ 완료 항목**:
+- [x] 1. 대시보드 상단 유튜브 채널 배너 추가
+- [x] 2. QuickLinksCard에 유튜브 채널 링크 추가
+- [x] 3. system_status 테이블 활용한 방문자 카운터 구현
+- [x] 4. PostgreSQL RPC 함수 생성 (increment_page_view, get_page_view_count)
+- [x] 5. usePageViewCounter 커스텀 훅 생성
+- [x] 6. 대시보드 방문자 카운터 UI 추가
+
+**📝 개선 상세 내역**:
+
+#### 1. YouTube 채널 배너 추가
+**파일**: `dashboard/app/dashboard/page.tsx` (MODIFIED)
+
+**기능**:
+- 유튜브 브랜드 색상 그라디언트 배너 (빨강 계열)
+- 유튜브 아이콘 + 채널명 + 설명
+- 호버 시 확대 효과 (scale: 1.01)
+- 새 탭에서 채널 열기
+
+```typescript
+<a
+  href="https://www.youtube.com/@코인먹는AI"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="block bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-[1.01]"
+>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-4">
+      <div className="bg-white rounded-full p-3">
+        <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+          {/* YouTube 아이콘 */}
+        </svg>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold">코인먹는AI 유튜브 채널</h3>
+        <p className="text-sm text-red-100">AI 트레이딩 전략과 암호화폐 인사이트를 확인하세요!</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+      <span className="text-sm font-semibold">채널 방문</span>
+    </div>
+  </div>
+</a>
+```
+
+#### 2. QuickLinksCard 유튜브 링크 추가
+**파일**: `dashboard/components/QuickLinksCard.tsx` (MODIFIED)
+
+**변경 사항**:
+- 새로운 "콘텐츠" 카테고리 추가
+- 코인먹는AI 유튜브 채널 링크 (🎥 아이콘)
+
+```typescript
+{
+  category: "콘텐츠",
+  items: [
+    { name: "코인먹는AI", url: "https://www.youtube.com/@코인먹는AI", icon: "🎥" },
+  ],
+}
+```
+
+#### 3. 방문자 카운터 - system_status 활용
+**파일**: `migration_temp/add_page_view_counter.sql` (NEW)
+
+**아키텍처**:
+- 기존 `system_status` 테이블 활용 (신규 테이블 생성 불필요)
+- Key-Value 구조로 `page_view_count` 키 사용
+- PostgreSQL RPC 함수로 원자적 업데이트 보장
+
+```sql
+-- 1. 초기 카운트 설정
+INSERT INTO system_status (status_key, status_value, last_updated)
+VALUES ("page_view_count", "0", NOW())
+ON CONFLICT (status_key) DO NOTHING;
+
+-- 2. 카운트 증가 함수
+CREATE OR REPLACE FUNCTION increment_page_view()
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_count BIGINT;
+BEGIN
+  UPDATE system_status
+  SET
+    status_value = (COALESCE(status_value::BIGINT, 0) + 1)::TEXT,
+    last_updated = NOW()
+  WHERE status_key = "page_view_count"
+  RETURNING status_value::BIGINT INTO new_count;
+
+  IF new_count IS NULL THEN
+    INSERT INTO system_status (status_key, status_value, last_updated)
+    VALUES ("page_view_count", "1", NOW())
+    RETURNING status_value::BIGINT INTO new_count;
+  END IF;
+
+  RETURN new_count;
+END;
+$$;
+
+-- 3. 카운트 조회 함수
+CREATE OR REPLACE FUNCTION get_page_view_count()
+RETURNS BIGINT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(status_value::BIGINT, 0)
+  FROM system_status
+  WHERE status_key = "page_view_count";
+$$;
+```
+
+#### 4. usePageViewCounter 커스텀 훅
+**파일**: `dashboard/lib/hooks/usePageViewCounter.ts` (NEW)
+
+**기능**:
+- 페이지 로드 시 자동 카운트 증가
+- 세션 스토리지로 중복 방지 (같은 세션 = 1회만 카운트)
+- 이미 방문한 세션은 조회만 수행
+
+```typescript
+export function usePageViewCounter() {
+  const [viewCount, setViewCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function trackPageView() {
+      try {
+        const sessionKey = "dashboard_visited";
+        const hasVisited = sessionStorage.getItem(sessionKey);
+
+        if (!hasVisited) {
+          // 방문 카운트 증가
+          const { data, error } = await supabase.rpc("increment_page_view");
+          if (!error) {
+            setViewCount(data || 0);
+            sessionStorage.setItem(sessionKey, "true");
+          }
+        } else {
+          // 이미 방문한 세션 → 조회만
+          const { data } = await supabase.rpc("get_page_view_count");
+          setViewCount(data || 0);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    trackPageView();
+  }, []);
+
+  return { viewCount, isLoading };
+}
+```
+
+#### 5. 방문자 카운터 UI
+**파일**: `dashboard/app/dashboard/page.tsx` (MODIFIED)
+
+**위치**: 유튜브 배너 아래, 우측 정렬
+**디자인**: 눈 아이콘 + "총 방문: X회" 표시
+
+```typescript
+<div className="flex justify-end">
+  <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg border border-slate-200">
+    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* 눈 아이콘 */}
+    </svg>
+    <span className="text-sm text-slate-600">총 방문:</span>
+    <span className="text-sm font-bold text-slate-800">
+      {isCountLoading ? "..." : viewCount.toLocaleString()}회
+    </span>
+  </div>
+</div>
+```
+
+**✅ 검증 완료**:
+- ✅ 유튜브 배너 정상 표시 (클릭 시 새 탭에서 채널 열림)
+- ✅ QuickLinksCard에 유튜브 링크 추가됨
+- ✅ 방문자 카운터 정상 작동 (세션 기반 중복 방지)
+- ✅ 페이지 새로고침 시 카운트 유지 (같은 세션에서는 증가 안 함)
+- ✅ 새 브라우저/시크릿 모드 시 카운트 증가
+
+**📊 개선 효과**:
+- **채널 홍보**: 대시보드 최상단 배너로 유튜브 채널 노출 극대화
+- **방문자 추적**: 실제 방문자 수 기반 사이트 인기도 측정
+- **중복 방지**: 세션 기반으로 페이지 새로고침 시 무한 증가 방지
+- **효율적 구조**: 신규 테이블 불필요, system_status 재활용
+
+**생성된 파일** (총 2개):
+- `migration_temp/add_page_view_counter.sql` (NEW) - RPC 함수 및 초기 데이터
+- `dashboard/lib/hooks/usePageViewCounter.ts` (NEW) - 방문자 카운터 훅
+
+**수정된 파일** (총 2개):
+- `dashboard/app/dashboard/page.tsx` (MODIFIED) - 유튜브 배너 + 방문자 카운터 UI
+- `dashboard/components/QuickLinksCard.tsx` (MODIFIED) - 콘텐츠 카테고리 추가
+
+**🎯 사용자 요청 반영**:
+1. ✅ "유튜브채널을 알릴수있고 바로 접속가능한 링크" → 상단 배너 + QuickLinks 추가
+2. ✅ "빠른링크에도 추가해줘" → QuickLinksCard에 콘텐츠 카테고리 추가
+3. ✅ "방문한 방문자의 누적횟수도 표시" → system_status 활용 카운터 구현
+4. ✅ "신규테이블 생성할필요없이 status테이블에 필드 추가" → Key-Value 구조 활용
+
+---
+
