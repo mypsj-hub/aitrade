@@ -31,7 +31,7 @@ const fetcher = async (): Promise<DashboardData> => {
 
     // 3. 포트폴리오 요약 (일별 최신 데이터 - 차트용)
     // 전략: PostgreSQL RPC 함수로 서버에서 일별 집계 (9,110개 → ~40개)
-    let summaryHistory: any[] = [];
+    let summaryHistory: PortfolioSummary[] = [];
 
     // RPC 함수 시도 (함수가 생성되지 않았으면 폴백)
     // 주의: RPC 함수는 이미 ORDER BY가 포함되어 있으므로 .order() 불필요
@@ -56,8 +56,8 @@ const fetcher = async (): Promise<DashboardData> => {
       if (fallbackError) throw fallbackError;
 
       // 클라이언트에서 일별 집계
-      const dailyMap = new Map<string, any>();
-      fallbackData?.forEach((item: any) => {
+      const dailyMap = new Map<string, PortfolioSummary>();
+      fallbackData?.forEach((item: PortfolioSummary) => {
         const dateKey = item.날짜.split('T')[0];
         if (!dailyMap.has(dateKey) || item.날짜 > dailyMap.get(dateKey).날짜) {
           dailyMap.set(dateKey, item);
