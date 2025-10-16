@@ -1,3 +1,23 @@
+/**
+ * 포트폴리오 날짜 선택기
+ *
+ * 목적: 특정 날짜의 포트폴리오 데이터를 조회하기 위한 날짜 선택 UI 제공
+ * 역할: 날짜 입력 필드와 선택된 날짜 정보 표시
+ *
+ * 주요 기능:
+ * - HTML5 date input으로 달력 UI 제공
+ * - 오늘 날짜까지만 선택 가능하도록 제한
+ * - 선택된 날짜를 한글 형식으로 표시
+ * - 부모 컴포넌트로 날짜 변경 이벤트 전달
+ * - 깔끔한 카드 형태의 UI
+ *
+ * Props:
+ * - selectedDate: Date - 현재 선택된 날짜
+ * - onDateChange: (date: Date) => void - 날짜 변경 핸들러
+ *
+ * 데이터 소스: 부모 컴포넌트에서 관리하는 state
+ * 기술 스택: date-fns, Tailwind CSS
+ */
 'use client';
 
 import { format } from 'date-fns';

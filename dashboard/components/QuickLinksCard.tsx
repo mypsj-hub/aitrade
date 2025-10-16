@@ -1,3 +1,20 @@
+/**
+ * 빠른 링크 카드
+ *
+ * 목적: 자주 사용하는 외부 암호화폐 관련 사이트로 빠르게 이동하기 위함
+ * 역할: 거래소, 뉴스, 분석 사이트 링크를 카테고리별로 정리하여 제공
+ *
+ * 주요 기능:
+ * - 3개 카테고리로 구성 (거래소, 뉴스, 분석)
+ * - Upbit, Binance 거래소 바로가기
+ * - CoinDesk, CoinTelegraph 뉴스 사이트 링크
+ * - TradingView, CoinGecko 분석 도구 링크
+ * - 새 탭에서 외부 링크 열기
+ * - 호버 시 시각적 피드백 제공
+ *
+ * 데이터 소스: 하드코딩된 링크 목록
+ * 기술 스택: React, Tailwind CSS
+ */
 'use client';
 
 export function QuickLinksCard() {

@@ -1,3 +1,42 @@
+/**
+ * 💼 Portfolio Page (포트폴리오 페이지)
+ *
+ * 목적: AI CIO 전략 중심의 포트폴리오 관리 및 분석
+ * 경로: /portfolio
+ *
+ * 주요 기능 (Phase 4A 완료):
+ * 1. 날짜 선택기 (input type="date") - 과거 데이터 조회
+ * 2. AI CIO 최신 전략 배너 (확장/축소 토글 기능)
+ * 3. 성과 게이지 (누적 수익률, 승률, 일일 수익률)
+ * 4. 포트폴리오 구성 차트 (원화 vs 코인 비율 도넛 차트)
+ * 5. AI 자가 평가 (강점, 약점, 교훈)
+ *
+ * 향후 추가 예정 (Phase 4B):
+ * - StrategyTimeline: 최근 7일 AI CIO 리포트 타임라인
+ * - MarketOutlookCard: AI CIO의 시장 전망 분석
+ * - RecentReportsTable: 리포트 목록 및 마크다운 뷰어
+ *
+ * 레이아웃 구조:
+ * - 날짜 선택기 (전체 너비)
+ * - CIO Insight Banner (전체 너비)
+ * - 2컬럼 그리드: 성과 게이지 + 포트폴리오 구성
+ * - AI 자가 평가 (전체 너비, 3컬럼 내부 그리드)
+ *
+ * 상태 관리:
+ * - useState로 selectedDate 관리 (Context 제거)
+ * - Props drilling으로 모든 하위 컴포넌트에 날짜 전달
+ *
+ * 데이터 소스:
+ * - portfolio_summary: 누적수익률, 일일수익률, 원화잔고, 총코인가치
+ * - trade_history: 승률 계산용
+ * - cio_reports: AI 전략, 자가 평가 (JSONB)
+ *
+ * 기술 스택:
+ * - SWR (5초/30초 간격 새로고침)
+ * - Recharts (RadialBarChart, PieChart)
+ * - react-markdown + remark-gfm (마크다운 렌더링)
+ * - date-fns (날짜 처리)
+ */
 'use client';
 
 import { useState } from 'react';

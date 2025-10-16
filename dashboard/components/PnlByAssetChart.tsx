@@ -1,3 +1,23 @@
+/**
+ * 자산별 손익 차트
+ *
+ * 목적: 각 코인별 누적 손익을 막대 그래프로 시각화하기 위함
+ * 역할: 코인별 손익을 내림차순으로 정렬하여 막대 차트로 표시
+ *
+ * 주요 기능:
+ * - 코인별 누적 손익을 막대 그래프로 표시
+ * - 손익 내림차순으로 자동 정렬
+ * - 양수 손익: 파란색, 음수 손익: 빨간색으로 구분
+ * - 0원 기준선 표시
+ * - 호버 시 상세 금액 툴팁
+ * - X축 레이블 45도 회전으로 가독성 향상
+ *
+ * Props:
+ * - data: PnlData[] - 코인별 손익 데이터 배열
+ *
+ * 데이터 소스: 부모 컴포넌트에서 계산된 집계 데이터
+ * 기술 스택: Recharts
+ */
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';

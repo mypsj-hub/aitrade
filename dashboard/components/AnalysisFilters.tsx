@@ -1,3 +1,20 @@
+/**
+ * 분석 필터 컴포넌트
+ *
+ * 목적: 거래 분석 페이지에서 데이터를 필터링하기 위한 UI 제공
+ * 역할: 날짜 범위와 거래 유형을 선택하여 거래 데이터 필터링
+ *
+ * 주요 기능:
+ * - 시작일/종료일 날짜 선택기
+ * - 6가지 거래유형 토글 선택 (신규매수, 추가매수, 익절, 손절, 부분손절, 매도)
+ * - 선택된 필터 요약 표시
+ * - 필터 초기화 버튼
+ * - Sticky 위치로 스크롤 시 상단 고정
+ * - Zustand store와 연동하여 전역 상태 관리
+ *
+ * 데이터 소스: filterStore (Zustand)
+ * 기술 스택: Zustand, date-fns, Tailwind CSS
+ */
 'use client';
 
 import { useFilterStore } from '@/lib/store/filterStore';

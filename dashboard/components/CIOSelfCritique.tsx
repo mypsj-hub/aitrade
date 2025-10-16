@@ -1,3 +1,23 @@
+/**
+ * CIO 자가 평가
+ *
+ * 목적: AI CIO의 자기 반성과 평가를 3개 카테고리로 나누어 표시하기 위함
+ * 역할: 최고의 결정, 개선할 점, 전략 일관성을 각각 색상 구분된 카드로 표시
+ *
+ * 주요 기능:
+ * - 최고의 결정(Best Decision): 초록색 카드로 표시
+ * - 개선할 점(Room for Improvement): 노란색 카드로 표시
+ * - 전략 일관성(Strategic Consistency): 파란색 카드로 표시
+ * - 선택된 날짜의 DAILY 리포트에서 self_critique 추출
+ * - 30초마다 자동 갱신
+ * - 3컬럼 그리드 레이아웃 (반응형)
+ *
+ * Props:
+ * - selectedDate: Date - 조회할 날짜
+ *
+ * 데이터 소스: cio_reports 테이블 (self_critique JSONB 필드)
+ * 기술 스택: SWR, Supabase, date-fns
+ */
 'use client';
 
 import useSWR from 'swr';

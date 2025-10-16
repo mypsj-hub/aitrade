@@ -1,3 +1,26 @@
+/**
+ * 분석 기간 성과 요약
+ *
+ * 목적: 선택된 기간 동안의 거래 성과를 한눈에 보여주기 위함
+ * 역할: 총 거래수, 총 손익, 승률, 손익비를 4개 카드로 표시
+ *
+ * 주요 기능:
+ * - 총 거래 건수 표시
+ * - 총 손익 금액 표시 (양수: 빨강, 음수: 파랑)
+ * - 승률 퍼센트 표시
+ * - 손익비(Profit Factor) 표시
+ * - 각 지표별 아이콘과 색상 구분
+ * - 반응형 그리드 레이아웃
+ *
+ * Props:
+ * - totalTrades: number - 총 거래 건수
+ * - totalProfit: number - 총 손익 금액
+ * - winRate: number - 승률 (%)
+ * - profitFactor: number - 손익비
+ *
+ * 데이터 소스: 부모 컴포넌트에서 계산된 통계 데이터
+ * 기술 스택: React, Tailwind CSS
+ */
 'use client';
 
 interface AnalysisSummaryProps {

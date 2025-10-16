@@ -1,3 +1,23 @@
+/**
+ * 성과 추이 차트
+ *
+ * 목적: 포트폴리오의 총자산 변화를 시계열 그래프로 시각화하기 위함
+ * 역할: 일별 총자산을 라인 차트로 표시하고 초기자산 대비 성과 비교
+ *
+ * 주요 기능:
+ * - 일별 총자산 데이터를 라인 차트로 시각화
+ * - 만원 단위로 Y축 표시하여 가독성 향상
+ * - 초기자산 기준선 표시 (Reference Line)
+ * - 마우스 호버 시 상세 정보 툴팁 표시
+ * - 초기자산 대비 수익률 계산 및 표시
+ * - 날짜별 마지막 데이터만 사용하여 중복 제거
+ *
+ * Props:
+ * - data: PortfolioSummary[] - 포트폴리오 요약 데이터 배열
+ *
+ * 데이터 소스: portfolio_summary 테이블, system_status 테이블 (초기자산)
+ * 기술 스택: Recharts, SWR, date-fns
+ */
 'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';

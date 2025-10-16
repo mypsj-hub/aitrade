@@ -1,3 +1,22 @@
+/**
+ * 최근 거래 내역 테이블
+ *
+ * 목적: 최근 발생한 거래 내역을 시간순으로 보여주기 위함
+ * 역할: 거래 시간, 코인, 유형, 수량, 금액, 사유를 테이블 형식으로 표시
+ *
+ * 주요 기능:
+ * - 최근 거래 내역을 시간순으로 정렬하여 표시
+ * - 거래유형별 배지 색상 구분 (매수: 빨강, 매도: 파랑)
+ * - 거래 시간을 날짜-시간 형식으로 표시
+ * - 거래 사유를 말줄임으로 간결하게 표시
+ * - 호버 시 행 하이라이트
+ *
+ * Props:
+ * - trades: TradeHistory[] - 거래 내역 배열
+ *
+ * 데이터 소스: trade_history 테이블
+ * 기술 스택: React, TypeScript, Tailwind CSS
+ */
 import type { TradeHistory } from '@/lib/types';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 

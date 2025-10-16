@@ -1,3 +1,21 @@
+/**
+ * 포트폴리오 요약 카드
+ *
+ * 목적: 사용자의 포트폴리오 핵심 지표를 한눈에 보여주기 위함
+ * 역할: 총순자산, 일일수익률, 누적수익률, 원화잔고 등 주요 재무지표 표시
+ *
+ * 주요 기능:
+ * - 4개의 핵심 메트릭 카드로 구성 (총순자산, 일일수익률, 누적수익률, 원화잔고)
+ * - 수익률에 따른 색상 구분 (양수: 빨강, 음수: 파랑)
+ * - 만원 단위로 포맷된 금액 표시
+ * - 그리드 레이아웃으로 반응형 배치
+ *
+ * Props:
+ * - summary: PortfolioSummary | null - 포트폴리오 요약 데이터
+ *
+ * 데이터 소스: portfolio_summary 테이블
+ * 기술 스택: React, TypeScript, Tailwind CSS
+ */
 import type { PortfolioSummary } from '@/lib/types';
 import { formatDate, formatCurrencyWithUnit } from '@/lib/utils/formatters';
 

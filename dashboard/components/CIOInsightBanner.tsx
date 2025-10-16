@@ -1,3 +1,23 @@
+/**
+ * CIO 인사이트 배너
+ *
+ * 목적: 선택된 날짜의 AI CIO 전략을 눈에 띄게 상단에 표시하기 위함
+ * 역할: 그라데이션 배경의 배너 형태로 CIO 리포트 전략 내용 강조 표시
+ *
+ * 주요 기능:
+ * - 선택된 날짜의 DAILY CIO 리포트 자동 조회
+ * - 전략 제목과 내용을 배너 형태로 표시
+ * - 200자 요약본 표시 및 전체 내용 펼치기/접기 기능
+ * - 그라데이션 배경(indigo to purple)으로 시각적 강조
+ * - 5초마다 자동 갱신
+ * - 로딩 및 데이터 없음 상태 처리
+ *
+ * Props:
+ * - selectedDate: Date - 조회할 날짜
+ *
+ * 데이터 소스: cio_reports 테이블 (report_type='DAILY')
+ * 기술 스택: SWR, Supabase, date-fns
+ */
 'use client';
 
 import { useState } from 'react';
