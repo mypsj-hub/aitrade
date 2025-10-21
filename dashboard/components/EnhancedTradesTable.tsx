@@ -75,10 +75,35 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
         header: '유형',
         cell: (info) => {
           const type = info.getValue() as string;
+          const row = info.row.original;
+          const profit = row.수익금;
           let colorClass = 'bg-slate-100 text-slate-700';
-          if (type.includes('익절')) colorClass = 'bg-green-100 text-green-700';
-          else if (type.includes('손절')) colorClass = 'bg-red-100 text-red-700';
-          else if (type.includes('매수')) colorClass = 'bg-blue-100 text-blue-700';
+
+          // 통일된 색상 규칙:
+          // 1. 매수 계열: 초록색 (손익 없음)
+          // 2. 매도/익절/손절 계열: 손익에 따라 색상 결정
+          //    - 손익 > 0: 빨간색 (수익)
+          //    - 손익 < 0: 파란색 (손실)
+          //    - 손익 = 0: 회색
+
+          if (type.includes('매수') || type.includes('신규') || type.includes('추가')) {
+            // 매수 계열은 항상 초록색
+            colorClass = 'bg-green-100 text-green-700';
+          } else if (type.includes('익절') || type.includes('손절') || type.includes('매도')) {
+            // 매도/익절/손절 계열은 손익에 따라 색상 결정
+            if (profit !== null && profit !== undefined) {
+              if (profit > 0) {
+                colorClass = 'bg-red-100 text-red-700'; // 수익 (+)
+              } else if (profit < 0) {
+                colorClass = 'bg-blue-100 text-blue-700'; // 손실 (-)
+              } else {
+                colorClass = 'bg-slate-100 text-slate-700'; // 손익 0
+              }
+            } else {
+              colorClass = 'bg-slate-100 text-slate-700';
+            }
+          }
+
           return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
               {type}
@@ -99,7 +124,18 @@ export function EnhancedTradesTable({ trades }: EnhancedTradesTableProps) {
         cell: (info) => {
           const value = info.getValue() as number | null;
           if (value === null) return '-';
-          const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
+
+          // 손익 색상:
+          // - 양수 (+): 빨간색 (수익)
+          // - 음수 (-): 파란색 (손실)
+          // - 0: 검정색
+          let colorClass = 'text-slate-900';
+          if (value > 0) {
+            colorClass = 'text-red-600';
+          } else if (value < 0) {
+            colorClass = 'text-blue-600';
+          }
+
           return <span className={`font-semibold ${colorClass}`}>{formatCurrency(value)}</span>;
         },
         size: 120,

@@ -49,7 +49,31 @@ export function RecentTradesTable({ trades }: Props) {
               <td className="px-4 py-3 font-semibold text-slate-800">{trade.코인이름}</td>
               <td className="px-4 py-3 text-center">
                 <span className={`px-2 py-1 text-xs rounded-full ${
-                  trade.거래유형.includes('매수') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                  (() => {
+                    const type = trade.거래유형;
+                    const profit = trade.수익금;
+
+                    // 통일된 색상 규칙:
+                    // 1. 매수 계열: 초록색 (손익 없음)
+                    // 2. 매도/익절/손절 계열: 손익에 따라 색상 결정
+                    //    - 손익 > 0: 빨간색 (수익)
+                    //    - 손익 < 0: 파란색 (손실)
+                    //    - 손익 = 0: 회색
+
+                    if (type.includes('매수') || type.includes('신규') || type.includes('추가')) {
+                      return 'bg-green-100 text-green-700';
+                    } else if (type.includes('익절') || type.includes('손절') || type.includes('매도')) {
+                      if (profit > 0) {
+                        return 'bg-red-100 text-red-700'; // 수익 (+)
+                      } else if (profit < 0) {
+                        return 'bg-blue-100 text-blue-700'; // 손실 (-)
+                      } else {
+                        return 'bg-slate-100 text-slate-700'; // 손익 0
+                      }
+                    }
+
+                    return 'bg-slate-100 text-slate-700';
+                  })()
                 }`}>
                   {trade.거래유형}
                 </span>

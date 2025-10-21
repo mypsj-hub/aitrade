@@ -82,6 +82,15 @@ export interface SystemStatus {
   last_updated: string;
 }
 
+// AI 관심 코인 (coin_watch_history 테이블)
+export interface WatchlistCoin {
+  코인이름: string;
+  순위: number;
+  퍼널타입: string;
+  점수: number;
+  최초등록일: string;
+}
+
 // 대시보드용 통합 데이터 타입
 export interface DashboardData {
   holdings: HoldingStatus[];
@@ -90,4 +99,5 @@ export interface DashboardData {
   recentTrades: TradeHistory[];
   latestReport: CIOReport | null;
   marketRegime: string;
+  watchlist: WatchlistCoin[];
 }

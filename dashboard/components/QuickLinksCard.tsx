@@ -1,14 +1,14 @@
 /**
  * 빠른 링크 카드
  *
- * 목적: 자주 사용하는 외부 암호화폐 관련 사이트로 빠르게 이동하기 위함
- * 역할: 거래소, 뉴스, 분석 사이트 링크를 카테고리별로 정리하여 제공
+ * 목적: 자주 사용하는 외부 암호화폐 및 경제 관련 사이트로 빠르게 이동하기 위함
+ * 역할: 시장 데이터, 경제 지표, 시장 심리 지표 사이트 링크 제공
  *
  * 주요 기능:
- * - 3개 카테고리로 구성 (거래소, 뉴스, 분석)
- * - Upbit, Binance 거래소 바로가기
- * - CoinDesk, CoinTelegraph 뉴스 사이트 링크
- * - TradingView, CoinGecko 분석 도구 링크
+ * - CoinMarketCap: 실시간 암호화폐 시세 및 순위
+ * - Investing.com: 글로벌 경제 지표 및 경제 캘린더
+ * - 한국은행 경제통계: 국내 금리, 환율, 물가 지표
+ * - Fear & Greed Index: 암호화폐 시장 심리 지표
  * - 새 탭에서 외부 링크 열기
  * - 호버 시 시각적 피드백 제공
  *
@@ -20,30 +20,17 @@
 export function QuickLinksCard() {
   const links = [
     {
-      category: '거래소',
+      category: '시장 데이터',
       items: [
-        { name: 'Upbit', url: 'https://upbit.com', icon: '🇰🇷' },
-        { name: 'Binance', url: 'https://www.binance.com', icon: '🌐' },
+        { name: 'CoinMarketCap', url: 'https://coinmarketcap.com/ko/', icon: '📊' },
+        { name: 'Investing.com', url: 'https://kr.investing.com/', icon: '💹' },
       ],
     },
     {
-      category: '뉴스',
+      category: '경제 지표',
       items: [
-        { name: 'CoinDesk', url: 'https://www.coindesk.com', icon: '📰' },
-        { name: 'CoinTelegraph', url: 'https://cointelegraph.com', icon: '📡' },
-      ],
-    },
-    {
-      category: '분석',
-      items: [
-        { name: 'TradingView', url: 'https://www.tradingview.com', icon: '📈' },
-        { name: 'CoinGecko', url: 'https://www.coingecko.com', icon: '🦎' },
-      ],
-    },
-    {
-      category: '콘텐츠',
-      items: [
-        { name: '코인먹는AI', url: 'https://www.youtube.com/@코인먹는AI', icon: '🎥' },
+        { name: '한국은행 경제통계', url: 'https://ecos.bok.or.kr/', icon: '🏦' },
+        { name: 'Fear & Greed Index', url: 'https://alternative.me/crypto/fear-and-greed-index/', icon: '🎯' },
       ],
     },
   ];

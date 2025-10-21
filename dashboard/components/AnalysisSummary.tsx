@@ -52,6 +52,7 @@ export function AnalysisSummary({
       color: 'text-slate-700',
       bgColor: 'bg-slate-50',
       icon: '📊',
+      tooltip: '매도 완료 거래 수',
     },
     {
       label: '총 손익',
@@ -60,6 +61,7 @@ export function AnalysisSummary({
       color: totalProfit >= 0 ? 'text-red-600' : 'text-blue-600',
       bgColor: totalProfit >= 0 ? 'bg-red-50' : 'bg-blue-50',
       icon: totalProfit >= 0 ? '💰' : '📉',
+      tooltip: '실현 수익 합계',
     },
     {
       label: '승률',
@@ -68,6 +70,7 @@ export function AnalysisSummary({
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       icon: '🎯',
+      tooltip: '수익 거래 비율',
     },
     {
       label: '손익비',
@@ -76,6 +79,7 @@ export function AnalysisSummary({
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       icon: '⚖️',
+      tooltip: '총이익 ÷ 총손실',
     },
   ];
 
@@ -88,11 +92,11 @@ export function AnalysisSummary({
             key={metric.label}
             className={`${metric.bgColor} rounded-lg p-4 border border-slate-200`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-2xl">{metric.icon}</span>
               <span className="text-xs text-slate-500">{metric.label}</span>
             </div>
-            <div className="flex items-baseline">
+            <div className="flex items-baseline mb-1">
               <span className={`text-2xl font-bold ${metric.color}`}>
                 {metric.value}
               </span>
@@ -100,6 +104,7 @@ export function AnalysisSummary({
                 <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
               )}
             </div>
+            <p className="text-[10px] text-slate-400">{metric.tooltip}</p>
           </div>
         ))}
       </div>

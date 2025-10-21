@@ -50,8 +50,8 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* 좌측: Logo + 프로젝트명 */}
-          <div className="flex items-center gap-3">
+          {/* 좌측: Logo + 프로젝트명 (홈 버튼) */}
+          <Link href="/dashboard" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white text-xl font-bold">AI</span>
             </div>
@@ -59,7 +59,7 @@ export function Navigation() {
               <h1 className="text-lg font-bold text-slate-900">코인먹는AI</h1>
               <p className="text-xs text-slate-500">v2.0</p>
             </div>
-          </div>
+          </Link>
 
           {/* 중앙: 네비게이션 탭 */}
           <div className="flex items-center gap-1">

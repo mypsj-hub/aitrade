@@ -20,7 +20,7 @@ interface FilterState {
 const getDefaultDateRange = () => {
   const end = new Date();
   const start = new Date();
-  start.setDate(start.getDate() - 30); // 최근 30일
+  start.setDate(start.getDate() - 7); // 최근 7일 (1주일)
   return { start, end };
 };
 

@@ -38,13 +38,19 @@ export function MarketRegimeBadge({ regime }: Props) {
   const getRegimeLabel = (regime: string) => {
     switch (regime) {
       case 'Bull_Market':
-        return '🚀 상승장';
+        return '🚀 강세장 (상승장 → 강세장)';
       case 'Bear_Market':
-        return '📉 하락장';
+        return '📉 약세장 (하락장 → 약세장)';
       case 'Range_Bound':
-        return '📊 횡보장';
+        return '📊 박스권 (횡보장 → 박스권)';
+      case 'Uptrend':
+        return '📈 상승세 (상승추세 → 상승세)';
+      case 'Downtrend':
+        return '📉 하락세 (하락추세 → 하락세)';
+      case 'Sideways':
+        return '➡️ 보합세 (횡보 → 보합세)';
       default:
-        return regime;
+        return `📊 ${regime}`;
     }
   };
 

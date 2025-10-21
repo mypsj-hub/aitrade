@@ -39,6 +39,7 @@ import { HoldingsTable } from '@/components/HoldingsTable';
 import { RecentTradesTable } from '@/components/RecentTradesTable';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { MarketRegimeBadge } from '@/components/MarketRegimeBadge';
+import { WatchlistTable } from '@/components/WatchlistTable';
 
 export default function DashboardPage() {
   const { data, isLoading, isError } = useDashboardData();
@@ -163,7 +164,10 @@ export default function DashboardPage() {
 
           {/* 총순자산 추이 차트 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">📊 총순자산 추이</h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">📊 총순자산 추이</h2>
+              <p className="text-xs text-slate-400 mt-1">일별 포트폴리오 가치 변화</p>
+            </div>
             <PerformanceChart data={data.summaryHistory} />
           </div>
         </div>
@@ -174,8 +178,19 @@ export default function DashboardPage() {
         {/* 보유 자산 테이블 */}
         <section>
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">🪙 보유 자산 현황</h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">🪙 보유 자산 현황</h2>
+              <p className="text-xs text-slate-400 mt-1">현재 보유 중인 코인 목록 및 수익률</p>
+            </div>
             <HoldingsTable holdings={data.holdings} />
+          </div>
+        </section>
+
+        {/* AI 관심 코인 테이블 */}
+        <section>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-4">🔍 AI 관심 코인</h2>
+            <WatchlistTable watchlist={data.watchlist} />
           </div>
         </section>
 

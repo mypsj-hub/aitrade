@@ -122,7 +122,7 @@ export default function AnalysisPage() {
 
   const summary = useMemo(() => {
     const closedTrades = filteredTrades.filter((t) =>
-      ['익절', '손절', '매도', '청산'].some((keyword) => t.거래유형.includes(keyword))
+      ['익절', '손절', '매도'].some((keyword) => t.거래유형.includes(keyword))
     );
 
     const totalTrades = closedTrades.length;
@@ -192,28 +192,43 @@ export default function AnalysisPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">💰 자산별 실현 손익</h2>
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-slate-800">💰 자산별 실현 손익</h2>
+                <p className="text-xs text-slate-400 mt-1">코인별 누적 수익/손실</p>
+              </div>
               <PnlByAssetChart data={pnlByAsset} />
             </div>
 
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간별 누적 손익 추이</h2>
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-slate-800">📈 기간별 누적 손익 추이</h2>
+                <p className="text-xs text-slate-400 mt-1">일별 손익 누적 그래프</p>
+              </div>
               <PerformanceTrendChart dailySummary={dailySummary || []} />
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">🎯 코인별 상세 통계</h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">🎯 코인별 상세 통계</h2>
+              <p className="text-xs text-slate-400 mt-1">코인별 거래 횟수, 승률, 평균 손익</p>
+            </div>
             <CoinStatsTable trades={filteredTrades} />
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">🤖 AI 매매 패턴 분석</h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">🤖 AI 매매 패턴 분석</h2>
+              <p className="text-xs text-slate-400 mt-1">거래 유형별 성과 및 시간대 분석</p>
+            </div>
             <AIPatternAnalysis trades={filteredTrades} />
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">📜 상세 거래 내역</h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">📜 상세 거래 내역</h2>
+              <p className="text-xs text-slate-400 mt-1">거래별 AI 사고 과정 및 지표</p>
+            </div>
             <EnhancedTradesTable trades={filteredTrades} />
           </div>
         </div>

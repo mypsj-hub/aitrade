@@ -8,6 +8,7 @@ import type {
   PortfolioSummary,
   TradeHistory,
   CIOReport,
+  WatchlistCoin,
 } from '../types';
 
 const fetcher = async (): Promise<DashboardData> => {
@@ -105,6 +106,16 @@ const fetcher = async (): Promise<DashboardData> => {
       throw statusError;
     }
 
+    // 7. AI 관심 코인 (coin_watch_history)
+    const { data: watchlistData, error: watchlistError } = await supabase
+      .from('coin_watch_history')
+      .select('*')
+      .order('순위', { ascending: true });
+
+    if (watchlistError) {
+      console.warn('[useDashboardData] Watchlist fetch warning:', watchlistError);
+    }
+
     return {
       holdings: (holdings as HoldingStatus[]) || [],
       summary: summaryData?.[0] as PortfolioSummary || null,
@@ -112,6 +123,7 @@ const fetcher = async (): Promise<DashboardData> => {
       recentTrades: (recentTrades as TradeHistory[]) || [],
       latestReport: reportData?.[0] as CIOReport || null,
       marketRegime: statusData?.status_value || 'Range_Bound',
+      watchlist: (watchlistData as WatchlistCoin[]) || [],
     };
   } catch (error) {
     console.error('Data fetching error:', error);

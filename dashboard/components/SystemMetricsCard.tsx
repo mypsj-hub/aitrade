@@ -88,7 +88,7 @@ async function fetchSystemMetrics(): Promise<SystemMetrics> {
     for (const trade of allTradesWithType as unknown as Array<{ 코인이름: string; 거래유형: string; 거래일시: string }>) {
       if (trade.거래유형.includes('매수')) {
         buyTrades[trade.코인이름] = trade.거래일시;
-      } else if ((trade.거래유형.includes('익절') || trade.거래유형.includes('손절')) && buyTrades[trade.코인이름]) {
+      } else if ((trade.거래유형.includes('익절') || trade.거래유형.includes('손절') || trade.거래유형.includes('매도')) && buyTrades[trade.코인이름]) {
         const buyTime = new Date(buyTrades[trade.코인이름]).getTime();
         const sellTime = new Date(trade.거래일시).getTime();
         const holdingHours = (sellTime - buyTime) / (1000 * 60 * 60);
@@ -126,6 +126,7 @@ export function SystemMetricsCard() {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       icon: '🎯',
+      tooltip: '수익 거래 비율',
     },
     {
       label: '손익비',
@@ -134,6 +135,7 @@ export function SystemMetricsCard() {
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       icon: '📊',
+      tooltip: '총이익 ÷ 총손실',
     },
     {
       label: '24h 거래',
@@ -142,6 +144,7 @@ export function SystemMetricsCard() {
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       icon: '⚡',
+      tooltip: '최근 24시간 거래',
     },
     {
       label: '평균 보유',
@@ -150,6 +153,7 @@ export function SystemMetricsCard() {
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       icon: '⏱️',
+      tooltip: '매수~매도 평균일',
     },
   ];
 
@@ -177,11 +181,11 @@ export function SystemMetricsCard() {
             key={metric.label}
             className={`${metric.bgColor} rounded-lg p-4 border border-slate-200 hover:shadow-md transition`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-2xl">{metric.icon}</span>
               <span className="text-xs text-slate-500">{metric.label}</span>
             </div>
-            <div className="flex items-baseline">
+            <div className="flex items-baseline mb-1">
               <span className={`text-2xl font-bold ${metric.color}`}>
                 {metric.value}
               </span>
@@ -189,6 +193,7 @@ export function SystemMetricsCard() {
                 <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
               )}
             </div>
+            <p className="text-[10px] text-slate-400">{metric.tooltip}</p>
           </div>
         ))}
       </div>

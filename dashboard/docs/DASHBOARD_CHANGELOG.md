@@ -256,627 +256,51 @@
 
 ---
 
-## 🔧 Dashboard Data & Display Improvements (2025-10-16)
-
-> **목표**: Dashboard 페이지 데이터 정합성 및 표시 개선
-> **실제 기간**: 반나절 (2025-10-16)
-> **상태**: ✅ 완료
-
-### [2025-10-16 11:06] Dashboard 개선 작업 완료
+## 🔧 Dashboard 개선 (2025-10-16)
 
 **✅ 완료 항목**:
-- [x] 1. MarketIndicators 실시간 데이터 통합
-- [x] 2. SystemMetricsCard 평균 보유기간 실제 계산
-- [x] 3. 통화 포맷 표준화 (₩ 제거, "원" 사용)
-- [x] 4. 날짜/시간 포맷 표준화 (yyyy-MM-dd HH:mm:ss)
-- [x] 5. PerformanceChart 수익률 → 총순자산 전환
-- [x] 6. 차트 단위 만원 변환
-- [x] 7. Y축 표시 버그 수정
+- [x] MarketIndicators 실시간 데이터 통합 (system_status 테이블 연동)
+- [x] SystemMetricsCard 평균 보유기간 실제 계산 (매수-청산 페어 매칭)
+- [x] 통화 포맷 표준화 (테이블: 숫자만, 요약: 원 단위)
+- [x] 날짜/시간 포맷 표준화 (yyyy-MM-dd HH:mm:ss)
+- [x] PerformanceChart: 수익률 → 총순자산 만원 단위 표시
+- [x] 차트 Y축 표시 버그 수정 (중복 변환 제거)
 
-**📝 개선 상세 내역**:
+**📝 주요 개선사항**:
+- **하드코딩 제거**: 공포탐욕지수, BTC도미넌스, 김치프리미엄 실시간 조회
+- **정확한 지표**: 실제 거래 데이터 기반 평균 보유기간 계산
+- **차트 개선**: 총순자산 추이를 만원 단위로 표시 (Dashboard와 통일)
+- **포맷 통일**: 통화, 날짜/시간 표시 일관성 확보
 
-#### 1. MarketIndicators 실시간 데이터 통합
-**파일**: `components/MarketIndicators.tsx`
-
-**기존**: 하드코딩된 임시 데이터 사용
-```typescript
-const fearGreedIndex = 65;
-const btcDominance = 52.3;
-const kimchiPremium = 0.8;
-```
-
-**개선**: Supabase system_status 테이블에서 실시간 조회
-```typescript
-async function fetchMarketIndicators(): Promise<MarketData> {
-  const { data: fearGreed } = await supabase
-    .from('system_status')
-    .select('status_value')
-    .eq('status_key', 'fear_greed_index')
-    .single();
-
-  const { data: btcDom } = await supabase
-    .from('system_status')
-    .select('status_value')
-    .eq('status_key', 'btc_dominance')
-    .single();
-
-  const { data: kimchi } = await supabase
-    .from('system_status')
-    .select('status_value')
-    .eq('status_key', 'kimchi_premium')
-    .single();
-
-  const fearGreedIndex = fearGreed ? parseInt(fearGreed.status_value) : 50;
-  const btcDominance = btcDom ? parseFloat(btcDom.status_value) : 50;
-  const kimchiPremium = kimchi ? parseFloat(kimchi.status_value) : 0;
-
-  // 동적 라벨 생성
-  let fearGreedLabel = '중립';
-  if (fearGreedIndex < 25) fearGreedLabel = '극단적 공포';
-  else if (fearGreedIndex < 45) fearGreedLabel = '공포';
-  else if (fearGreedIndex < 55) fearGreedLabel = '중립';
-  else if (fearGreedIndex < 75) fearGreedLabel = '탐욕';
-  else fearGreedLabel = '극단적 탐욕';
-
-  return { fearGreedIndex, fearGreedLabel, btcDominance, kimchiPremium };
-}
-
-export function MarketIndicators() {
-  const { data, isLoading } = useSWR<MarketData>(
-    'market-indicators',
-    fetchMarketIndicators,
-    { refreshInterval: 60000 } // 1분마다 갱신
-  );
-}
-```
-
-**효과**: process1에서 5분 간격으로 수집된 최신 시장 지표를 실시간 반영
-
-#### 2. SystemMetricsCard 평균 보유기간 실제 계산
-**파일**: `components/SystemMetricsCard.tsx`
-
-**기존**: 하드코딩된 값 `"2.3일"`
-
-**개선**: 매수-청산 페어 매칭 알고리즘으로 실제 계산
-```typescript
-// 평균 보유 기간 계산 (매수 후 청산까지)
-const { data: allTradesWithType } = await supabase
-  .from('trade_history')
-  .select('코인이름, 거래유형, 거래일시')
-  .gte('거래일시', thirtyDaysAgo.toISOString())
-  .order('거래일시', { ascending: true });
-
-let totalHoldingHours = 0;
-let pairCount = 0;
-const buyTrades: Record<string, string> = {};
-
-if (allTradesWithType) {
-  for (const trade of allTradesWithType as unknown as Array<{
-    코인이름: string;
-    거래유형: string;
-    거래일시: string
-  }>) {
-    if (trade.거래유형.includes('매수')) {
-      buyTrades[trade.코인이름] = trade.거래일시;
-    } else if (
-      (trade.거래유형.includes('익절') || trade.거래유형.includes('손절')) &&
-      buyTrades[trade.코인이름]
-    ) {
-      const buyTime = new Date(buyTrades[trade.코인이름]).getTime();
-      const sellTime = new Date(trade.거래일시).getTime();
-      const holdingHours = (sellTime - buyTime) / (1000 * 60 * 60);
-      totalHoldingHours += holdingHours;
-      pairCount++;
-      delete buyTrades[trade.코인이름];
-    }
-  }
-}
-
-const avgHoldingTime = pairCount > 0
-  ? `${(totalHoldingHours / pairCount / 24).toFixed(1)}일`
-  : '-';
-```
-
-**효과**: 실제 매수-청산 데이터 기반 정확한 평균 보유기간 표시
-
-#### 3. 통화 포맷 표준화
-**파일**: `lib/utils/formatters.ts`, 다수의 컴포넌트
-
-**개선 사항**:
-- 상세 테이블(보유자산현황, 거래내역): ₩ 제거, 숫자만 표시
-- 요약 카드(포트폴리오 요약): "원" 단위 표시
-
-```typescript
-// 상세 테이블용 - 통화 기호 없음
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(Math.round(value));
-}
-
-// 요약 카드용 - '원' 접미사 포함
-export function formatCurrencyWithUnit(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(Math.round(value)) + '원';
-}
-```
-
-**적용 파일**:
-- `components/PortfolioSummaryCard.tsx` - formatCurrencyWithUnit 사용
-- `components/HoldingsTable.tsx` - formatCurrency 사용
-- `components/RecentTradesTable.tsx` - formatCurrency 사용
-- `components/EnhancedTradesTable.tsx` - formatCurrency 사용
-
-#### 4. 날짜/시간 포맷 표준화
-**파일**: `lib/utils/formatters.ts`, 관련 컴포넌트
-
-**개선**: 모든 날짜/시간 표시를 `yyyy-MM-dd HH:mm:ss` 형식으로 통일
-
-```typescript
-export function formatDateTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  return format(date, 'yyyy-MM-dd HH:mm:ss');
-}
-
-export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return format(date, 'yyyy-MM-dd');
-}
-```
-
-**기존 표시**: `2025-10-15T23:54:57.579711+00:00`
-**개선 표시**: `2025-10-15 23:54:57`
-
-#### 5. PerformanceChart 수익률 → 총순자산 전환
-**파일**: `components/PerformanceChartEnhanced.tsx`, `app/dashboard/page.tsx`
-
-**기존**: "누적수익률 추이" - 백분율 그래프
-**개선**: "총순자산 추이" - 절대 금액 그래프 (만원 단위)
-
-```typescript
-interface ChartData {
-  date: string;
-  총자산: number;
-  수익률: number;
-}
-
-useEffect(() => {
-  async function fetchInitialAsset() {
-    const { data: statusData } = await supabase
-      .from('system_status')
-      .select('status_value')
-      .eq('status_key', 'initial_total_asset')
-      .single();
-
-    if (statusData?.status_value) {
-      setInitialAsset(parseFloat(statusData.status_value));
-    }
-  }
-
-  fetchInitialAsset();
-}, []);
-
-// 1일 기준으로 데이터 그룹핑 (날짜별 마지막 값만 사용)
-const dailyData = new Map<string, { asset: number, date: string }>();
-
-data.forEach((item) => {
-  const dateKey = item.날짜.split('T')[0]; // YYYY-MM-DD 형식
-  const currentAsset = item.총포트폴리오가치 || item.총순자산;
-
-  // 같은 날짜의 데이터가 있으면 더 최근 것으로 업데이트
-  if (!dailyData.has(dateKey) || item.날짜 > (dailyData.get(dateKey)?.date || '')) {
-    dailyData.set(dateKey, { asset: currentAsset, date: item.날짜 });
-  }
-});
-```
-
-**차트 제목 변경**:
-- Dashboard 페이지: `📊 누적수익률 추이` → `📊 총순자산 추이`
-
-#### 6. 차트 단위 만원 변환
-**파일**: `components/PerformanceChartEnhanced.tsx`
-
-**기존**: 백만원(M) 단위
-**개선**: 만원 단위 표시
-
-```typescript
-// 총자산을 만원 단위로 변환
-const chartDataInManwon = chartData.map(item => ({
-  date: item.date,
-  총자산만원: Math.round(item.총자산 / 10000),
-  총자산원본: item.총자산,
-  수익률: item.수익률,
-}));
-
-const initialAssetManwon = Math.round(initialAsset / 10000);
-
-<YAxis
-  tickFormatter={formatYAxis}
-  label={{
-    value: '총자산 (만원)',
-    angle: -90,
-    position: 'insideLeft',
-    style: { fontSize: 12 }
-  }}
-/>
-<ReferenceLine
-  y={initialAssetManwon}
-  stroke="#94a3b8"
-  strokeDasharray="3 3"
-  label={{ value: '초기자산', position: 'right', fontSize: 10, fill: '#64748b' }}
-/>
-<Line
-  type="monotone"
-  dataKey="총자산만원"
-  stroke="#2563eb"
-  strokeWidth={2}
-/>
-```
-
-**표시 예시**:
-- 초기 자산: 10,000,000원 → 1,000만원
-- 2025-10-14: 10,000,000원 → 1,000만원
-- 2025-10-15: 5,000,000원 → 500만원
-- 2025-10-16: 8,000,000원 → 800만원
-
-#### 7. Y축 표시 버그 수정
-**파일**: `components/PerformanceChartEnhanced.tsx`
-
-**문제**: Y축이 모두 0으로 표시됨
-
-**원인**: formatYAxis 함수에서 이미 만원 단위로 변환된 값을 다시 10000으로 나눔
-```typescript
-// 버그 코드
-const formatYAxis = (value: number) => {
-  const manwon = Math.round(value / 10000);  // 중복 변환
-  return `${manwon.toLocaleString('ko-KR')}`;
-};
-```
-
-**수정**: 이미 변환된 값을 그대로 포맷팅
-```typescript
-// 수정된 코드
-const formatYAxis = (value: number) => {
-  return `${Math.round(value).toLocaleString('ko-KR')}`;
-};
-```
-
-**효과**: Y축에 정확한 만원 단위 값 표시 (예: 1,000, 500, 800)
-
-**✅ 검증 완료**:
-- ✅ MarketIndicators 실시간 데이터 업데이트 (60초 간격)
-- ✅ SystemMetricsCard 평균 보유기간 정확한 계산
-- ✅ 모든 통화 포맷 통일 (상세: 숫자만, 요약: 원 포함)
-- ✅ 모든 날짜/시간 표시 통일 (yyyy-MM-dd HH:mm:ss)
-- ✅ PerformanceChart 총순자산 만원 단위 표시
-- ✅ Y축 만원 값 정확히 표시
-- ✅ 로컬 테스트 정상 작동 (localhost:3000)
-
-**📊 개선 효과**:
-- 시장 지표: 5분마다 최신 데이터 자동 반영
-- 시스템 성과: 실제 데이터 기반 정확한 지표
-- 사용자 경험: 일관된 포맷으로 가독성 향상
-- 데이터 신뢰도: 하드코딩 제거로 정합성 확보
-
-**수정된 파일** (총 9개):
-- `components/MarketIndicators.tsx`
-- `components/SystemMetricsCard.tsx`
-- `components/PerformanceChartEnhanced.tsx`
-- `components/PortfolioSummaryCard.tsx`
-- `components/HoldingsTable.tsx`
-- `components/RecentTradesTable.tsx`
-- `components/EnhancedTradesTable.tsx`
-- `lib/utils/formatters.ts`
-- `app/dashboard/page.tsx`
+**수정된 파일** (9개):
+- `components/MarketIndicators.tsx`, `SystemMetricsCard.tsx`, `PerformanceChartEnhanced.tsx`
+- `components/PortfolioSummaryCard.tsx`, `HoldingsTable.tsx`, `RecentTradesTable.tsx`
+- `components/EnhancedTradesTable.tsx`, `lib/utils/formatters.ts`, `app/dashboard/page.tsx`
 
 ---
 
-## 📊 Analysis Tab Comprehensive Enhancement (2025-10-16)
-
-> **목표**: Analysis 탭 완전 개선 - 기간별 추이, AI 패턴 분석, 코인별 통계, 검색 기능
-> **실제 기간**: 반나절 (2025-10-16)
-> **상태**: ✅ 완료
-
-### [2025-10-16 15:00] Analysis 탭 전면 개선 완료
+## 📊 Analysis 탭 개선 (2025-10-16)
 
 **✅ 완료 항목**:
-- [x] 1. PerformanceTrendChart 컴포넌트 생성 (기간별 누적 손익 추이)
-- [x] 2. CoinStatsTable 컴포넌트 생성 (코인별 상세 통계)
-- [x] 3. AIPatternAnalysis 컴포넌트 생성 (AI 매매 패턴 분석)
-- [x] 4. EnhancedTradesTable 검색 기능 추가
-- [x] 5. AnalysisSummary 카드 레이아웃 개선
-- [x] 6. 날짜 필터 버그 수정 (당일 데이터 미표시 문제)
-- [x] 7. 손익 색상 통일 (수익=빨강, 손실=파랑)
-- [x] 8. Analysis 페이지 레이아웃 재구성
+- [x] PerformanceTrendChart 생성 (기간별 누적 손익 추이, 만원 단위)
+- [x] CoinStatsTable 생성 (코인별 승률, 손익비, 평균 손익 통계)
+- [x] AIPatternAnalysis 생성 (거래 유형별/시간대별 성과 분석)
+- [x] EnhancedTradesTable 검색 기능 추가 (globalFilter)
+- [x] AnalysisSummary 카드 레이아웃 개선 (타이틀 추가)
+- [x] 날짜 필터 버그 수정 (당일 23:59:59까지 포함)
+- [x] 손익 색상 통일 (수익=빨강, 손실=파랑)
 
-**📝 개선 상세 내역**:
-
-#### 1. PerformanceTrendChart - 기간별 누적 손익 추이
-**파일**: `components/PerformanceTrendChart.tsx` (NEW)
-
-**기능**:
-- 일자별 거래 데이터 집계 및 누적 손익 계산
-- 만원 단위 변환으로 Dashboard와 통일성 확보
-- 커스텀 툴팁으로 원/만원 동시 표시
-- 일별 거래 건수 표시
-
-```typescript
-interface DailyPerformance {
-  date: string;
-  cumulativeProfit: number;
-  cumulativeProfitManwon: number;  // 만원 단위
-  dailyProfit: number;
-  tradeCount: number;
-  displayDate: string;
-}
-
-// 만원 단위 변환
-cumulativeProfitManwon: Math.round(cumulative / 10000)
-
-// Y축 라벨
-<YAxis
-  tickFormatter={formatYAxis}
-  label={{
-    value: '누적 손익 (만원)',
-    angle: -90,
-    position: 'insideLeft',
-  }}
-/>
-```
-
-**효과**: "통합 예정" 플레이스홀더를 실제 작동하는 차트로 전환
-
-#### 2. CoinStatsTable - 코인별 상세 통계
-**파일**: `components/CoinStatsTable.tsx` (NEW)
-
-**기능**:
-- 코인별 집계: 거래 수, 승률, 평균 손익, 최대 이익, 최대 손실, 총 손익, 손익비
-- TanStack Table 기반 정렬 가능한 테이블
-- 승률 기반 색상 코딩 (60% 이상=초록, 40-60%=검정, 40% 미만=빨강)
-- 손익 표시: 수익=빨강, 손실=파랑
-
-```typescript
-interface CoinStats {
-  coin: string;
-  tradeCount: number;
-  winRate: number;
-  avgProfit: number;
-  maxProfit: number;
-  maxLoss: number;
-  totalProfit: number;
-  profitFactor: number;
-}
-
-// 코인별 집계 로직
-closedTrades.forEach((trade) => {
-  const coin = trade.코인이름;
-  if (!coinMap.has(coin)) {
-    coinMap.set(coin, {
-      coin,
-      tradeCount: 0,
-      winCount: 0,
-      totalProfit: 0,
-      maxProfit: 0,
-      maxLoss: 0,
-      profits: [],
-      losses: [],
-    });
-  }
-
-  const stats = coinMap.get(coin)!;
-  stats.tradeCount += 1;
-  const profit = trade.수익금 || 0;
-  stats.totalProfit += profit;
-
-  if (profit > 0) {
-    stats.winCount += 1;
-    stats.profits.push(profit);
-    stats.maxProfit = Math.max(stats.maxProfit, profit);
-  } else if (profit < 0) {
-    stats.losses.push(Math.abs(profit));
-    stats.maxLoss = Math.max(stats.maxLoss, Math.abs(profit));
-  }
-});
-```
-
-**효과**: 코인별 성과를 한눈에 파악 가능
-
-#### 3. AIPatternAnalysis - AI 매매 패턴 분석
-**파일**: `components/AIPatternAnalysis.tsx` (NEW)
-
-**기능**:
-- 거래 유형별 성과 차트 (듀얼 Y축: 승률 % + 거래 수)
-- 거래 유형별 상세 통계 테이블
-- 시간대별 거래 패턴 차트
-- 승률 기반 동적 색상 (60% 이상=초록, 40-60%=파랑, 40% 미만=빨강)
-
-```typescript
-interface TradeTypeStats {
-  type: string;
-  count: number;
-  winCount: number;
-  winRate: number;
-  avgProfit: number;
-  totalProfit: number;
-}
-
-// 거래 유형별 집계
-const typeMap = new Map<string, TradeTypeStats>();
-closedTrades.forEach((trade) => {
-  const type = trade.거래유형;
-  if (!typeMap.has(type)) {
-    typeMap.set(type, {
-      type,
-      count: 0,
-      winCount: 0,
-      winRate: 0,
-      avgProfit: 0,
-      totalProfit: 0,
-    });
-  }
-
-  const stats = typeMap.get(type)!;
-  stats.count += 1;
-  stats.totalProfit += trade.수익금 || 0;
-  if ((trade.수익금 || 0) > 0) {
-    stats.winCount += 1;
-  }
-});
-```
-
-**레이아웃 구성**:
-1. 거래 유형별 성과 차트 (상단)
-2. 거래 유형별 상세 통계 테이블 (중간)
-3. 시간대별 거래 패턴 (하단) - 사용자 요청으로 마지막에 배치
-
-**효과**: AI의 매매 패턴을 다각도로 분석 가능
-
-#### 4. EnhancedTradesTable - 검색 기능 추가
-**파일**: `components/EnhancedTradesTable.tsx` (MODIFIED)
-
-**추가 기능**:
-- globalFilter 상태 추가
-- 검색 아이콘이 포함된 검색 입력 필드
-- 초기화 버튼
-- 실시간 필터링
-
-```typescript
-const [globalFilter, setGlobalFilter] = useState<string>('');
-
-const table = useReactTable({
-  state: {
-    sorting,
-    globalFilter,
-  },
-  onGlobalFilterChange: setGlobalFilter,
-  globalFilterFn: 'includesString',
-  // ...
-});
-
-// 검색 UI
-<div className="relative flex-1 max-w-md">
-  <input
-    type="text"
-    value={globalFilter ?? ''}
-    onChange={(e) => setGlobalFilter(e.target.value)}
-    placeholder="코인 이름으로 검색... (예: BTC, ETH)"
-    className="w-full px-4 py-2 pl-10..."
-  />
-  <svg className="absolute left-3 top-1/2...">
-    {/* 검색 아이콘 */}
-  </svg>
-</div>
-```
-
-**효과**: 특정 코인 거래 내역을 빠르게 검색 가능
-
-#### 5. AnalysisSummary - 카드 레이아웃 개선
-**파일**: `components/AnalysisSummary.tsx` (MODIFIED)
-
-**변경 사항**:
-- "📈 기간내 성과" 타이틀 추가
-- 독립된 카드 레이아웃으로 감싸기
-- 손익 색상 변경: 수익=빨강, 손실=파랑
-
-```typescript
-return (
-  <div className="bg-white rounded-lg shadow-lg p-6">
-    <h2 className="text-xl font-bold text-slate-800 mb-4">📈 기간내 성과</h2>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 4개 메트릭 카드 */}
-    </div>
-  </div>
-);
-```
-
-#### 6. 날짜 필터 버그 수정
-**파일**: `app/analysis/page.tsx` (MODIFIED)
-
-**문제**: 당일 날짜(10월 16일) 선택 시 해당 날짜의 거래가 표시되지 않음
-**원인**: 종료일이 `00:00:00`으로 설정되어 당일 거래가 제외됨
-
-**수정**:
-```typescript
-// 기존 (버그)
-const endOfDay = new Date(filters.dateRange.end);
-// endOfDay는 00:00:00 상태
-
-// 수정 (정상)
-const endOfDay = new Date(filters.dateRange.end);
-endOfDay.setHours(23, 59, 59, 999);  // 하루의 끝까지 포함
-```
-
-**효과**: 당일 거래가 정상적으로 필터링됨
-
-#### 7. 손익 색상 통일 (일봉 차트 규칙)
-**적용 파일**:
-- `components/AnalysisSummary.tsx`
-- `components/AIPatternAnalysis.tsx`
-- `components/CoinStatsTable.tsx`
-- `components/EnhancedTradesTable.tsx`
-
-**변경 사항**:
-- 기존: 수익=파랑, 손실=빨강 (회계 규칙)
-- 개선: 수익=빨강, 손실=파랑 (일봉 차트 규칙, 직관적)
-
-```typescript
-// 모든 손익 표시 통일
-const colorClass = value >= 0 ? 'text-red-600' : 'text-blue-600';
-```
-
-**효과**: 주식/암호화폐 차트와 동일한 색상 규칙으로 사용자 혼란 방지
-
-#### 8. Analysis 페이지 레이아웃 재구성
-**파일**: `app/analysis/page.tsx` (MODIFIED)
-
-**최종 레이아웃**:
-```
-├── 필터 (좌측 1컬럼, sticky)
-└── 메인 콘텐츠 (우측 3컬럼)
-    ├── 기간내 성과 (AnalysisSummary)
-    ├── 2컬럼 그리드
-    │   ├── 자산별 실현 손익 (PnlByAssetChart)
-    │   └── 기간별 누적 손익 추이 (PerformanceTrendChart)
-    ├── 코인별 상세 통계 (CoinStatsTable)
-    ├── AI 매매 패턴 분석 (AIPatternAnalysis)
-    └── 상세 거래 내역 (EnhancedTradesTable)
-```
-
-**✅ 검증 완료**:
-- ✅ 기간별 누적 손익 추이 차트 정상 표시 (만원 단위)
-- ✅ 코인별 상세 통계 정확한 계산
-- ✅ AI 패턴 분석 차트 정상 렌더링
-- ✅ 거래 내역 검색 기능 정상 작동
-- ✅ 날짜 필터 당일 데이터 정상 표시
-- ✅ 모든 손익 색상 통일 (빨강/파랑)
-- ✅ 로컬 빌드 성공 (npm run dev)
-- ✅ TypeScript 컴파일 오류 없음
-
-**📊 개선 효과**:
-- **기간별 추이 시각화**: 누적 손익 추세를 한눈에 파악
-- **코인별 성과 분석**: 각 코인의 승률, 손익비, 평균 손익 비교
+**📝 주요 개선사항**:
+- **기간별 추이 시각화**: 누적 손익 차트 (만원 단위)
+- **코인별 성과 분석**: 승률, 손익비, 평균 손익 통계
 - **AI 패턴 인사이트**: 거래 유형별/시간대별 성과 분석
-- **빠른 검색**: 특정 코인 거래 내역 즉시 조회
-- **직관적인 색상**: 일봉 차트와 동일한 색상 규칙
-- **데이터 정합성**: 날짜 필터 버그 수정으로 정확한 데이터 표시
+- **검색 기능**: globalFilter로 코인명 검색
+- **버그 수정**: 날짜 필터 당일 23:59:59까지 포함
+- **색상 통일**: 수익=빨강, 손실=파랑 (일봉 규칙)
 
-**생성된 파일** (총 3개):
-- `components/PerformanceTrendChart.tsx` (NEW)
-- `components/CoinStatsTable.tsx` (NEW)
-- `components/AIPatternAnalysis.tsx` (NEW)
-
-**수정된 파일** (총 3개):
-- `components/AnalysisSummary.tsx` (MODIFIED)
-- `components/EnhancedTradesTable.tsx` (MODIFIED)
-- `app/analysis/page.tsx` (MODIFIED)
-
-**🎯 사용자 피드백 반영**:
-1. ✅ "기간별추이 그래프가 나오지 않아" → PerformanceTrendChart 생성
-2. ✅ "코인을 검색할수 있는 기능을 추가해줘" → globalFilter 검색 구현
-3. ✅ "supabase내 테이블정보를 세부적으로 관리" → CoinStatsTable, AIPatternAnalysis 추가
-4. ✅ "데이터 내보내기는 필요없어" → 제외
-5. ✅ "오늘 날짜로 지정하면 데이터가 안나와" → 날짜 필터 버그 수정
-6. ✅ "y축을 만원단위 main과 동일하게" → 만원 단위 변환
-7. ✅ "기간내성과 타이틀 표시" → AnalysisSummary 타이틀 추가
-8. ✅ "시간대별 거래패턴 젤 마지막에" → AIPatternAnalysis 레이아웃 재구성
-9. ✅ "수익:빨강, 손해:파랑으로" → 4개 컴포넌트 색상 통일
+**생성/수정 파일** (6개):
+- `components/PerformanceTrendChart.tsx`, `CoinStatsTable.tsx`, `AIPatternAnalysis.tsx` (NEW)
+- `components/AnalysisSummary.tsx`, `EnhancedTradesTable.tsx`, `app/analysis/page.tsx` (MODIFIED)
 
 ---
 
@@ -1393,7 +817,149 @@ portfolio/page.tsx:
 
 **📌 이 문서는 매 작업마다 즉시 업데이트해야 합니다.**
 
-**최종 업데이트**: 2025-10-16 16:00
+**최종 업데이트**: 2025-10-22 19:00
+
+---
+
+## 🎨 UX 개선 및 한글화 (2025-10-22)
+
+**✅ 완료 항목**:
+- [x] 로고 영역 홈 버튼 변환 (Navigation 컴포넌트)
+- [x] 분석 탭 기본 기간 7일(1주일)로 변경
+- [x] 빠른 링크 실용적인 사이트로 교체 (4개)
+- [x] 시장 상황 표시 한글 전문 용어로 개선
+- [x] 거래 유형 색상 통일 (손익 기반 동적 색상)
+- [x] 모바일 친화적 툴팁 추가 (모든 지표)
+- [x] '청산' 용어 제거 및 실제 데이터 기반 로직 수정
+
+**📝 주요 개선사항**:
+
+### 1. Navigation - 로고 홈 버튼 (Navigation.tsx)
+- "코인먹는AI" 로고 클릭 시 /dashboard로 이동
+- hover:opacity-80 효과 추가
+- 직관적인 네비게이션 UX 개선
+
+### 2. 분석 기간 설정 최적화 (filterStore.ts)
+- 기본 날짜 범위: 30일 → 7일(1주일)
+- 최근 데이터 중심 분석으로 성능 개선
+- 모바일 사용자 고려한 데이터량 최적화
+
+### 3. 빠른 링크 실용성 개선 (QuickLinksCard.tsx)
+- **기존**: Upbit, Binance, CoinDesk, CoinTelegraph, TradingView, CoinGecko
+- **변경**:
+  - 시장 데이터: CoinMarketCap, Investing.com
+  - 경제 지표: 한국은행 경제통계, Fear & Greed Index
+- 트레이딩에 실질적으로 도움되는 사이트로 교체
+
+### 4. 시장 상황 한글 전문 용어 개선 (MarketRegimeBadge.tsx)
+- **용어 변경 및 설명 추가**:
+  - Bull_Market → 🚀 강세장 (상승장 → 강세장)
+  - Bear_Market → 📉 약세장 (하락장 → 약세장)
+  - Range_Bound → 📊 박스권 (횡보장 → 박스권)
+  - Uptrend → 📈 상승세 (상승추세 → 상승세)
+  - Downtrend → 📉 하락세 (하락추세 → 하락세)
+  - Sideways → ➡️ 보합세 (횡보 → 보합세)
+- 금융 전문 용어 사용으로 신뢰성 향상
+- 용어 변천 과정 표시로 교육적 효과
+
+### 5. 거래 유형 색상 통일 및 동적 색상 결정
+**EnhancedTradesTable.tsx, RecentTradesTable.tsx**:
+- 기존: 거래 유형 키워드 기반 정적 색상 (부분손절 항상 빨강)
+- 개선: 실제 손익 값 기반 동적 색상
+  - 손익 > 0: bg-red-100 (수익)
+  - 손익 < 0: bg-blue-100 (손실)
+  - 손익 = 0: bg-slate-100 (무손익)
+  - 매수: bg-green-100 (초록)
+- 전량매도의 경우 손익에 따라 색상 자동 결정
+
+**손익 컬럼 색상 코딩**:
+- 양수 (+): text-red-600 (수익)
+- 음수 (-): text-blue-600 (손실)
+- 0: text-slate-900 (무손익)
+
+### 6. 모바일 친화적 툴팁 추가
+**SystemMetricsCard.tsx** (4개 지표):
+- 승률: "수익 거래 비율"
+- 손익비: "총이익 ÷ 총손실"
+- 24h 거래: "최근 24시간 거래"
+- 평균 보유: "매수~매도 평균일"
+
+**AnalysisSummary.tsx** (4개 지표):
+- 총 거래: "매도 완료 거래 수"
+- 총 손익: "실현 수익 합계"
+- 승률: "수익 거래 비율"
+- 손익비: "총이익 ÷ 총손실"
+
+**Dashboard 섹션 설명**:
+- 총순자산 추이: "일별 포트폴리오 가치 변화"
+- 보유자산현황: "현재 보유 중인 코인 목록 및 수익률"
+
+**Analysis 섹션 설명** (5개):
+- 자산별 실현 손익: "코인별 누적 수익/손실"
+- 기간별 누적 손익 추이: "일별 손익 누적 그래프"
+- 코인별 상세 통계: "코인별 거래 횟수, 승률, 평균 손익"
+- AI 매매 패턴 분석: "거래 유형별 성과 및 시간대 분석"
+- 상세 거래 내역: "거래별 AI 사고 과정 및 지표"
+
+**특징**:
+- 모든 툴팁 text-[10px] 크기 (모바일 최적화)
+- 3-5단어 이내 간결한 설명
+- 핵심만 전달하는 명확한 표현
+
+### 7. '청산' 용어 검증 및 수정
+**문제**: 코드에 '청산' 키워드가 사용되었으나 실제 DB에 존재하지 않음
+
+**데이터베이스 실제 거래 유형** (6개만 존재):
+- 신규매수, 추가매수
+- 부분익절, 전량익절
+- 부분손절, 전량매도
+
+**수정된 파일** (5개):
+1. **SystemMetricsCard.tsx (line 91)**:
+   - 평균 보유기간 계산에 '매도' 키워드 추가
+   - 전량매도 거래도 평균 보유 기간 계산에 포함
+
+2. **SystemMetricsCard.tsx (line 156)**:
+   - tooltip: "매수~청산 평균" → "매수~매도 평균일"
+
+3. **AnalysisSummary.tsx (line 55)**:
+   - tooltip: "청산 완료 거래 수" → "매도 완료 거래 수"
+
+4. **analysis/page.tsx (line 125)**:
+   - 필터: ['익절', '손절', '매도', '청산'] → ['익절', '손절', '매도']
+
+5. **EnhancedTradesTable.tsx, RecentTradesTable.tsx**:
+   - 색상 로직에서 '청산' 제거
+   - '익절', '손절', '매도' 키워드만 사용
+
+**개선 효과**:
+- 실제 데이터와 완전히 일치하는 로직
+- 전량매도 거래 누락 없이 정확한 통계 계산
+- 유지보수성 향상 (실제 존재하는 값만 참조)
+
+**수정된 파일** (총 9개):
+- `components/Navigation.tsx` - 로고 홈 버튼
+- `lib/store/filterStore.ts` - 기본 기간 7일
+- `components/QuickLinksCard.tsx` - 빠른 링크 4개
+- `components/MarketRegimeBadge.tsx` - 한글 전문 용어
+- `components/EnhancedTradesTable.tsx` - 동적 색상 + 청산 제거
+- `components/RecentTradesTable.tsx` - 동적 색상 + 청산 제거
+- `components/SystemMetricsCard.tsx` - 툴팁 + 청산→매도
+- `components/AnalysisSummary.tsx` - 툴팁 + 청산→매도
+- `app/analysis/page.tsx` - 섹션 설명 + 청산 제거
+
+**📊 개선 효과**:
+- **UX 향상**: 로고 클릭 홈 이동, 직관적인 네비게이션
+- **모바일 최적화**: 10px 툴팁, 7일 기본 기간
+- **실용성**: 트레이딩에 실질적 도움되는 사이트 링크
+- **전문성**: 금융 전문 용어 사용 (강세장/약세장/박스권)
+- **정확성**: 실제 DB 데이터와 완전히 일치하는 로직
+- **직관성**: 손익 기반 동적 색상으로 한눈에 파악
+- **교육성**: 용어 변천 표시로 학습 효과
+
+---
+
+**최종 업데이트**: 2025-10-22 19:00
 
 ---
 
@@ -1438,219 +1004,24 @@ portfolio/page.tsx:
 - ⏳ Framer Motion (Phase 6 예정)
 
 
-## 🎬 YouTube Channel & Visitor Counter Integration (2025-10-16)
-
-> **목표**: 유튜브 채널 홍보 및 방문자 카운터 추가
-> **실제 기간**: 1시간 (2025-10-16)
-> **상태**: ✅ 완료
-
-### [2025-10-16 19:30] YouTube 채널 및 방문자 카운터 추가 완료
+## 🎬 YouTube & 방문자 카운터 (2025-10-16)
 
 **✅ 완료 항목**:
-- [x] 1. 대시보드 상단 유튜브 채널 배너 추가
-- [x] 2. QuickLinksCard에 유튜브 채널 링크 추가
-- [x] 3. system_status 테이블 활용한 방문자 카운터 구현
-- [x] 4. PostgreSQL RPC 함수 생성 (increment_page_view, get_page_view_count)
-- [x] 5. usePageViewCounter 커스텀 훅 생성
-- [x] 6. 대시보드 방문자 카운터 UI 추가
+- [x] 유튜브 채널 배너 추가 (상단 빨간색 그라디언트)
+- [x] QuickLinksCard에 유튜브 링크 추가 (콘텐츠 카테고리)
+- [x] 방문자 카운터 구현 (system_status 테이블 + RPC 함수)
+- [x] 세션 기반 중복 방지 (sessionStorage)
 
-**📝 개선 상세 내역**:
+**📝 주요 변경사항**:
+- **YouTube 배너**: https://www.youtube.com/@코인먹는AI 링크 연결
+- **RPC 함수**: `increment_page_view()`, `get_page_view_count()` 생성
+- **커스텀 훅**: `usePageViewCounter.ts` - 자동 카운트 + 중복 방지
 
-#### 1. YouTube 채널 배너 추가
-**파일**: `dashboard/app/dashboard/page.tsx` (MODIFIED)
-
-**기능**:
-- 유튜브 브랜드 색상 그라디언트 배너 (빨강 계열)
-- 유튜브 아이콘 + 채널명 + 설명
-- 호버 시 확대 효과 (scale: 1.01)
-- 새 탭에서 채널 열기
-
-```typescript
-<a
-  href="https://www.youtube.com/@코인먹는AI"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="block bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-[1.01]"
->
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-4">
-      <div className="bg-white rounded-full p-3">
-        <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-          {/* YouTube 아이콘 */}
-        </svg>
-      </div>
-      <div>
-        <h3 className="text-lg font-bold">코인먹는AI 유튜브 채널</h3>
-        <p className="text-sm text-red-100">AI 트레이딩 전략과 암호화폐 인사이트를 확인하세요!</p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
-      <span className="text-sm font-semibold">채널 방문</span>
-    </div>
-  </div>
-</a>
-```
-
-#### 2. QuickLinksCard 유튜브 링크 추가
-**파일**: `dashboard/components/QuickLinksCard.tsx` (MODIFIED)
-
-**변경 사항**:
-- 새로운 "콘텐츠" 카테고리 추가
-- 코인먹는AI 유튜브 채널 링크 (🎥 아이콘)
-
-```typescript
-{
-  category: "콘텐츠",
-  items: [
-    { name: "코인먹는AI", url: "https://www.youtube.com/@코인먹는AI", icon: "🎥" },
-  ],
-}
-```
-
-#### 3. 방문자 카운터 - system_status 활용
-**파일**: `migration_temp/add_page_view_counter.sql` (NEW)
-
-**아키텍처**:
-- 기존 `system_status` 테이블 활용 (신규 테이블 생성 불필요)
-- Key-Value 구조로 `page_view_count` 키 사용
-- PostgreSQL RPC 함수로 원자적 업데이트 보장
-
-```sql
--- 1. 초기 카운트 설정
-INSERT INTO system_status (status_key, status_value, last_updated)
-VALUES ("page_view_count", "0", NOW())
-ON CONFLICT (status_key) DO NOTHING;
-
--- 2. 카운트 증가 함수
-CREATE OR REPLACE FUNCTION increment_page_view()
-RETURNS BIGINT
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  new_count BIGINT;
-BEGIN
-  UPDATE system_status
-  SET
-    status_value = (COALESCE(status_value::BIGINT, 0) + 1)::TEXT,
-    last_updated = NOW()
-  WHERE status_key = "page_view_count"
-  RETURNING status_value::BIGINT INTO new_count;
-
-  IF new_count IS NULL THEN
-    INSERT INTO system_status (status_key, status_value, last_updated)
-    VALUES ("page_view_count", "1", NOW())
-    RETURNING status_value::BIGINT INTO new_count;
-  END IF;
-
-  RETURN new_count;
-END;
-$$;
-
--- 3. 카운트 조회 함수
-CREATE OR REPLACE FUNCTION get_page_view_count()
-RETURNS BIGINT
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT COALESCE(status_value::BIGINT, 0)
-  FROM system_status
-  WHERE status_key = "page_view_count";
-$$;
-```
-
-#### 4. usePageViewCounter 커스텀 훅
-**파일**: `dashboard/lib/hooks/usePageViewCounter.ts` (NEW)
-
-**기능**:
-- 페이지 로드 시 자동 카운트 증가
-- 세션 스토리지로 중복 방지 (같은 세션 = 1회만 카운트)
-- 이미 방문한 세션은 조회만 수행
-
-```typescript
-export function usePageViewCounter() {
-  const [viewCount, setViewCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function trackPageView() {
-      try {
-        const sessionKey = "dashboard_visited";
-        const hasVisited = sessionStorage.getItem(sessionKey);
-
-        if (!hasVisited) {
-          // 방문 카운트 증가
-          const { data, error } = await supabase.rpc("increment_page_view");
-          if (!error) {
-            setViewCount(data || 0);
-            sessionStorage.setItem(sessionKey, "true");
-          }
-        } else {
-          // 이미 방문한 세션 → 조회만
-          const { data } = await supabase.rpc("get_page_view_count");
-          setViewCount(data || 0);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    trackPageView();
-  }, []);
-
-  return { viewCount, isLoading };
-}
-```
-
-#### 5. 방문자 카운터 UI
-**파일**: `dashboard/app/dashboard/page.tsx` (MODIFIED)
-
-**위치**: 유튜브 배너 아래, 우측 정렬
-**디자인**: 눈 아이콘 + "총 방문: X회" 표시
-
-```typescript
-<div className="flex justify-end">
-  <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg border border-slate-200">
-    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      {/* 눈 아이콘 */}
-    </svg>
-    <span className="text-sm text-slate-600">총 방문:</span>
-    <span className="text-sm font-bold text-slate-800">
-      {isCountLoading ? "..." : viewCount.toLocaleString()}회
-    </span>
-  </div>
-</div>
-```
-
-**✅ 검증 완료**:
-- ✅ 유튜브 배너 정상 표시 (클릭 시 새 탭에서 채널 열림)
-- ✅ QuickLinksCard에 유튜브 링크 추가됨
-- ✅ 방문자 카운터 정상 작동 (세션 기반 중복 방지)
-- ✅ 페이지 새로고침 시 카운트 유지 (같은 세션에서는 증가 안 함)
-- ✅ 새 브라우저/시크릿 모드 시 카운트 증가
-
-**📊 개선 효과**:
-- **채널 홍보**: 대시보드 최상단 배너로 유튜브 채널 노출 극대화
-- **방문자 추적**: 실제 방문자 수 기반 사이트 인기도 측정
-- **중복 방지**: 세션 기반으로 페이지 새로고침 시 무한 증가 방지
-- **효율적 구조**: 신규 테이블 불필요, system_status 재활용
-
-**생성된 파일** (총 2개):
-- `migration_temp/add_page_view_counter.sql` (NEW) - RPC 함수 및 초기 데이터
-- `dashboard/lib/hooks/usePageViewCounter.ts` (NEW) - 방문자 카운터 훅
-
-**수정된 파일** (총 2개):
-- `dashboard/app/dashboard/page.tsx` (MODIFIED) - 유튜브 배너 + 방문자 카운터 UI
-- `dashboard/components/QuickLinksCard.tsx` (MODIFIED) - 콘텐츠 카테고리 추가
-
-**🎯 사용자 요청 반영**:
-1. ✅ "유튜브채널을 알릴수있고 바로 접속가능한 링크" → 상단 배너 + QuickLinks 추가
-2. ✅ "빠른링크에도 추가해줘" → QuickLinksCard에 콘텐츠 카테고리 추가
-3. ✅ "방문한 방문자의 누적횟수도 표시" → system_status 활용 카운터 구현
-4. ✅ "신규테이블 생성할필요없이 status테이블에 필드 추가" → Key-Value 구조 활용
+**생성/수정 파일**:
+- `dashboard/app/dashboard/page.tsx` - 배너 + 카운터 UI
+- `dashboard/components/QuickLinksCard.tsx` - 콘텐츠 카테고리
+- `dashboard/lib/hooks/usePageViewCounter.ts` - 카운터 훅
+- `migration_temp/add_page_view_counter.sql` - RPC 함수
 
 ---
 
