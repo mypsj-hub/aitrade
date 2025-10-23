@@ -1,12 +1,11 @@
 /**
  * 포트폴리오 구성
  *
- * 목적: 포트폴리오의 자산 구성 비율을 도넛 차트로 시각화하고 비중 관리 정보 제공
- * 역할: 원화와 코인의 비율을 파이 차트로 표시하고 CIO의 포트폴리오 비중 관리 전략 표시
+ * 목적: 포트폴리오의 자산 구성 비율을 도넛 차트로 시각화하기 위함
+ * 역할: 원화와 코인의 비율을 파이 차트로 표시하고 상세 금액 정보 제공
  *
  * 주요 기능:
  * - 원화 잔고와 코인 가치를 도넛 차트로 시각화
- * - "2. 포트폴리오 비중 관리" 섹션 표시 (시각적 디자인)
  * - 중앙에 총자산 금액 표시 (만원 단위)
  * - 각 항목별 비율(%) 자동 계산 및 표시
  * - 원화: 파란색, 코인: 빨간색으로 구분
@@ -16,7 +15,7 @@
  * Props:
  * - selectedDate: Date - 조회할 날짜
  *
- * 데이터 소스: portfolio_summary, cio_reports 테이블
+ * 데이터 소스: portfolio_summary 테이블
  * 기술 스택: Recharts, SWR, Supabase, date-fns
  */
 'use client';
@@ -31,14 +30,10 @@ interface CompositionData {
   cashBalance: number;
   coinValue: number;
   totalAsset: number;
-  portfolioAllocation?: string;
 }
 
-function transformCompositionData(raw: Record<string, unknown>): {
-  cashBalance: number;
-  coinValue: number;
-  totalAsset: number;
-} {
+// Supabase 원본 데이터를 타입 안전한 형태로 변환
+function transformCompositionData(raw: Record<string, unknown>): CompositionData {
   return {
     cashBalance: typeof raw['원화잔고'] === 'number' ? raw['원화잔고'] : 0,
     coinValue: typeof raw['총코인가치'] === 'number' ? raw['총코인가치'] : 0,
@@ -48,6 +43,8 @@ function transformCompositionData(raw: Record<string, unknown>): {
 
 async function fetchCompositionByDate(selectedDate: Date): Promise<CompositionData | null> {
   const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+  // 날짜 컬럼이 timestamp 타입이므로 날짜 범위로 검색
   const startOfDay = `${dateString}T00:00:00`;
   const endOfDay = `${dateString}T23:59:59`;
 
@@ -61,41 +58,12 @@ async function fetchCompositionByDate(selectedDate: Date): Promise<CompositionDa
 
   if (error || !rawDataArray || rawDataArray.length === 0) return null;
 
-  const composition = transformCompositionData(rawDataArray[0] as Record<string, unknown>);
-
-  const { data: reportData } = await supabase
-    .from('cio_reports')
-    .select('full_content_md')
-    .eq('report_type', 'DAILY')
-    .eq('report_date', dateString)
-    .limit(1);
-
-  let portfolioAllocation = '';
-  if (reportData && reportData.length > 0) {
-    const fullContentMd = reportData[0].full_content_md || '';
-    const regex = /##?\s*2\.\s*포트폴리오\s*비중\s*관리([\s\S]*?)(?=##?\s*3\.|$)/i;
-    const match = fullContentMd.match(regex);
-
-    if (match && match[1]) {
-      portfolioAllocation = match[1]
-        .replace(/#{1,6}\s*/g, '')
-        .replace(/\*\*/g, '')
-        .replace(/\*/g, '')
-        .replace(/^[-*]\s/gm, '• ')
-        .replace(/\n\s*\n\s*\n/g, '\n\n')
-        .trim();
-    }
-  }
-
-  return {
-    ...composition,
-    portfolioAllocation,
-  };
+  return transformCompositionData(rawDataArray[0] as Record<string, unknown>);
 }
 
 const COLORS = {
-  cash: '#3b82f6',
-  coin: '#ef4444',
+  cash: '#3b82f6', // 파랑 (원화)
+  coin: '#ef4444', // 빨강 (코인)
 };
 
 interface PortfolioCompositionProps {
@@ -110,9 +78,10 @@ export function PortfolioComposition({ selectedDate }: PortfolioCompositionProps
   const { data, isLoading } = useSWR<CompositionData | null>(
     ['portfolio-composition', dateKey],
     () => dateKey !== 'invalid-date' ? fetchCompositionByDate(selectedDate) : null,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000 } // 5초 간격 갱신
   );
 
+  // 도넛 차트 데이터
   const chartData = useMemo(() => {
     if (!data) return [];
 
@@ -161,24 +130,7 @@ export function PortfolioComposition({ selectedDate }: PortfolioCompositionProps
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 포트폴리오 구성</h2>
 
-      {data.portfolioAllocation && (
-        <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-slate-800 mb-2">💼 포트폴리오 비중 관리</h3>
-              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {data.portfolioAllocation}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* 도넛 차트 */}
       <div className="relative">
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
@@ -213,6 +165,7 @@ export function PortfolioComposition({ selectedDate }: PortfolioCompositionProps
           </PieChart>
         </ResponsiveContainer>
 
+        {/* 중앙 총자산 표시 */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
           <div className="text-2xl font-bold text-slate-800">
             {(data.totalAsset / 10000).toFixed(0)}
@@ -221,6 +174,7 @@ export function PortfolioComposition({ selectedDate }: PortfolioCompositionProps
         </div>
       </div>
 
+      {/* 상세 정보 */}
       <div className="mt-6 space-y-3">
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
           <div className="flex items-center">

@@ -12,12 +12,14 @@
  * - 24시간 거래 횟수 집계
  * - 60초마다 자동 갱신
  * - 로딩 상태 UI 제공
+ * - 카드 클릭 시 분석 페이지로 이동
  *
  * 데이터 소스: trade_history 테이블
- * 기술 스택: SWR, Supabase, Recharts
+ * 기술 스택: SWR, Supabase, Next.js Link
  */
 'use client';
 
+import Link from 'next/link';
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
 
@@ -173,30 +175,32 @@ export function SystemMetricsCard() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">📈 시스템 성과 (30일)</h2>
-      <div className="grid grid-cols-2 gap-4">
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className={`${metric.bgColor} rounded-lg p-4 border border-slate-200 hover:shadow-md transition`}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-2xl">{metric.icon}</span>
-              <span className="text-xs text-slate-500">{metric.label}</span>
+    <Link href="/analysis" className="block">
+      <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
+        <h2 className="text-xl font-bold text-slate-800 mb-4">📈 시스템 성과 (30일)</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {metrics.map((metric) => (
+            <div
+              key={metric.label}
+              className={`${metric.bgColor} rounded-lg p-4 border border-slate-200 hover:shadow-md transition`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-2xl">{metric.icon}</span>
+                <span className="text-xs text-slate-500">{metric.label}</span>
+              </div>
+              <div className="flex items-baseline mb-1">
+                <span className={`text-2xl font-bold ${metric.color}`}>
+                  {metric.value}
+                </span>
+                {metric.suffix && (
+                  <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400">{metric.tooltip}</p>
             </div>
-            <div className="flex items-baseline mb-1">
-              <span className={`text-2xl font-bold ${metric.color}`}>
-                {metric.value}
-              </span>
-              {metric.suffix && (
-                <span className="ml-1 text-sm text-slate-500">{metric.suffix}</span>
-              )}
-            </div>
-            <p className="text-[10px] text-slate-400">{metric.tooltip}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }

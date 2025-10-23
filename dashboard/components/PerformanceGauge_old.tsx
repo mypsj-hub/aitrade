@@ -2,13 +2,12 @@
  * 성과 게이지
  *
  * 목적: 선택된 날짜의 포트폴리오 성과를 게이지 차트로 시각적으로 표시하기 위함
- * 역할: 누적수익률을 반원형 게이지로 표시하고 주요 성과 지표 및 포트폴리오 비중 관리 정보 제공
+ * 역할: 누적수익률을 반원형 게이지로 표시하고 주요 성과 지표 제공
  *
  * 주요 기능:
  * - 누적수익률을 0-20% 범위의 반원형 게이지로 시각화
  * - 수익률에 따른 게이지 색상 변경 (빨강/노랑/초록)
  * - 누적수익률, 승률, 일일수익률 3개 지표 카드 표시
- * - "2. 포트폴리오 비중 관리" 섹션 표시 (시각적 디자인 개선)
  * - 목표 수익률 10% 안내
  * - 총자산을 만원 단위로 표시
  * - 5초마다 자동 갱신
@@ -16,7 +15,7 @@
  * Props:
  * - selectedDate: Date - 조회할 날짜
  *
- * 데이터 소스: portfolio_summary, trade_history, cio_reports 테이블
+ * 데이터 소스: portfolio_summary, trade_history 테이블
  * 기술 스택: Recharts, SWR, Supabase, date-fns
  */
 'use client';
@@ -32,9 +31,9 @@ interface PerformanceData {
   dailyReturn: number;
   winRate: number;
   totalAsset: number;
-  portfolioAllocation?: string;
 }
 
+// Supabase 원본 데이터를 타입 안전한 형태로 변환
 function transformPortfolioData(raw: Record<string, unknown>): {
   cumulativeReturn: number;
   dailyReturn: number;
@@ -54,7 +53,10 @@ function transformTradeData(raw: Record<string, unknown>): { profitAmount: numbe
 }
 
 async function fetchPerformanceDataByDate(selectedDate: Date): Promise<PerformanceData | null> {
+  // 1. 선택된 날짜의 포트폴리오 요약 가져오기
   const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+  // 날짜 컬럼이 timestamp 타입이므로 날짜 범위로 검색
   const startOfDay = `${dateString}T00:00:00`;
   const endOfDay = `${dateString}T23:59:59`;
 
@@ -69,6 +71,7 @@ async function fetchPerformanceDataByDate(selectedDate: Date): Promise<Performan
   if (portfolioError || !rawPortfolioArray || rawPortfolioArray.length === 0) return null;
   const rawPortfolio = rawPortfolioArray[0];
 
+  // 2. 청산 거래만 필터링하여 승률 계산 (전체 기간)
   const { data: rawTrades, error: tradesError } = await supabase
     .from('trade_history')
     .select('*')
@@ -81,38 +84,13 @@ async function fetchPerformanceDataByDate(selectedDate: Date): Promise<Performan
     winRate = (winCount / trades.length) * 100;
   }
 
-  const { data: reportData } = await supabase
-    .from('cio_reports')
-    .select('full_content_md')
-    .eq('report_type', 'DAILY')
-    .eq('report_date', dateString)
-    .limit(1);
-
-  let portfolioAllocation = '';
-  if (reportData && reportData.length > 0) {
-    const fullContentMd = reportData[0].full_content_md || '';
-    const regex = /##?\s*3\.\s*최근\s*7일\s*매매\s*성과([\s\S]*?)(?=##?\s*4\.|$)/i;
-    const match = fullContentMd.match(regex);
-
-    if (match && match[1]) {
-      portfolioAllocation = match[1]
-        .replace(/#{1,6}\s*/g, '')
-        .replace(/\*\*/g, '')
-        .replace(/\*/g, '')
-        .replace(/^[-*]\s/gm, '• ')
-        .replace(/\n\s*\n\s*\n/g, '\n\n')
-        .trim();
-    }
-  }
-
   const portfolio = transformPortfolioData(rawPortfolio as Record<string, unknown>);
 
   return {
     cumulativeReturn: portfolio.cumulativeReturn,
     dailyReturn: portfolio.dailyReturn,
-    winRate: Math.round(winRate * 10) / 10,
+    winRate: Math.round(winRate * 10) / 10, // 소수점 1자리
     totalAsset: portfolio.totalAsset,
-    portfolioAllocation,
   };
 }
 
@@ -128,20 +106,22 @@ export function PerformanceGauge({ selectedDate }: PerformanceGaugeProps) {
   const { data, isLoading } = useSWR<PerformanceData | null>(
     ['performance-gauge', dateKey],
     () => dateKey !== 'invalid-date' ? fetchPerformanceDataByDate(selectedDate) : null,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000 } // 5초 간격 갱신
   );
 
+  // 게이지 차트 데이터
   const gaugeData = useMemo(() => {
     if (!data) return [];
 
-    const targetReturn = 10;
-    const currentReturn = Math.max(0, Math.min(data.cumulativeReturn, 20));
+    const targetReturn = 10; // 목표 수익률 10%
+    const currentReturn = Math.max(0, Math.min(data.cumulativeReturn, 20)); // 0-20% 범위로 제한
 
-    let fill = '#ef4444';
+    // 색상 결정
+    let fill = '#ef4444'; // 빨강 (손실)
     if (currentReturn >= targetReturn) {
-      fill = '#22c55e';
+      fill = '#22c55e'; // 초록 (목표 달성)
     } else if (currentReturn >= 5) {
-      fill = '#eab308';
+      fill = '#eab308'; // 노랑 (중간)
     }
 
     return [
@@ -182,24 +162,7 @@ export function PerformanceGauge({ selectedDate }: PerformanceGaugeProps) {
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h2 className="text-xl font-bold text-slate-800 mb-4">📊 성과 게이지</h2>
 
-      {data.portfolioAllocation && (
-        <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-slate-800 mb-2">📈 최근 7일 매매 성과</h3>
-              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {data.portfolioAllocation}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* 게이지 차트 */}
       <div className="mb-6">
         <ResponsiveContainer width="100%" height={200}>
           <RadialBarChart
@@ -239,16 +202,19 @@ export function PerformanceGauge({ selectedDate }: PerformanceGaugeProps) {
         </ResponsiveContainer>
       </div>
 
+      {/* 3개 지표 카드 */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg p-4 text-center border border-red-200">
-          <div className="text-xs text-slate-600 font-medium mb-1">누적수익률</div>
+        {/* 누적수익률 */}
+        <div className="bg-slate-50 rounded-lg p-4 text-center">
+          <div className="text-xs text-slate-500 mb-1">누적수익률</div>
           <div className={`text-xl font-bold ${data.cumulativeReturn >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
             {data.cumulativeReturn >= 0 ? '+' : ''}{data.cumulativeReturn.toFixed(2)}%
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 text-center border border-green-200">
-          <div className="text-xs text-slate-600 font-medium mb-1">승률</div>
+        {/* 승률 */}
+        <div className="bg-slate-50 rounded-lg p-4 text-center">
+          <div className="text-xs text-slate-500 mb-1">승률</div>
           <div className={`text-xl font-bold ${
             data.winRate >= 60 ? 'text-green-600' :
             data.winRate >= 40 ? 'text-slate-700' :
@@ -258,14 +224,16 @@ export function PerformanceGauge({ selectedDate }: PerformanceGaugeProps) {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 text-center border border-blue-200">
-          <div className="text-xs text-slate-600 font-medium mb-1">일일수익률</div>
+        {/* 일일수익률 */}
+        <div className="bg-slate-50 rounded-lg p-4 text-center">
+          <div className="text-xs text-slate-500 mb-1">일일수익률</div>
           <div className={`text-xl font-bold ${data.dailyReturn >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
             {data.dailyReturn >= 0 ? '+' : ''}{data.dailyReturn.toFixed(2)}%
           </div>
         </div>
       </div>
 
+      {/* 목표 안내 */}
       <div className="mt-4 text-center text-xs text-slate-500">
         목표 수익률: 10% | 현재 총자산: {(data.totalAsset / 10000).toFixed(0)}만원
       </div>

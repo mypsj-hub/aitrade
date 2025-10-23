@@ -7,7 +7,7 @@
  * 주요 기능:
  * - 코인별 누적 손익을 막대 그래프로 표시
  * - 손익 내림차순으로 자동 정렬
- * - 양수 손익: 파란색, 음수 손익: 빨간색으로 구분
+ * - 양수 손익(+): 빨간색, 음수 손익(-): 파란색으로 구분 (한국 차트 관례)
  * - 0원 기준선 표시
  * - 호버 시 상세 금액 툴팁
  * - X축 레이블 45도 회전으로 가독성 향상
@@ -79,7 +79,7 @@ export function PnlByAssetChart({ data }: PnlByAssetChartProps) {
         <ReferenceLine y={0} stroke="#94a3b8" strokeWidth={2} />
         <Bar dataKey="pnl" radius={[8, 8, 0, 0]}>
           {sortedData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#3b82f6' : '#ef4444'} />
+            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#ef4444' : '#3b82f6'} />
           ))}
         </Bar>
       </BarChart>

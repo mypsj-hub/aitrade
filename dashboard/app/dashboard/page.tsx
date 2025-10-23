@@ -6,13 +6,13 @@
  *
  * 주요 기능:
  * 1. 실시간 포트폴리오 요약 (총자산, 수익률, 보유 코인 수)
- * 2. 시스템 성과 메트릭 (최근 30일 거래 수, 승률, 평균 보유기간)
+ * 2. 시스템 성과 메트릭 (최근 30일 거래 수, 승률, 평균 보유기간) - 클릭 시 분석 페이지
  * 3. AI CIO 최신 전략 표시
  * 4. 오늘의 주요 거래 내역 (최근 5건)
  * 5. 시장 지표 (공포탐욕지수, BTC 도미넌스, 김치 프리미엄)
  * 6. 빠른 링크 (Upbit, CoinGecko 등)
  * 7. 총순자산 추이 차트 (만원 단위)
- * 8. 보유 자산 현황 테이블
+ * 8. 보유 자산 현황 테이블 - 클릭 시 포트폴리오 페이지
  * 9. 최근 거래 내역 테이블 (최근 20건)
  *
  * 레이아웃 구조:
@@ -27,6 +27,7 @@
  */
 'use client';
 
+import Link from 'next/link';
 import { useDashboardData } from '@/lib/hooks/useDashboardData';
 import { usePageViewCounter } from '@/lib/hooks/usePageViewCounter';
 import { PortfolioSummaryCard } from '@/components/PortfolioSummaryCard';
@@ -177,13 +178,15 @@ export default function DashboardPage() {
       <div className="mt-8 space-y-8">
         {/* 보유 자산 테이블 */}
         <section>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-slate-800">🪙 보유 자산 현황</h2>
-              <p className="text-xs text-slate-400 mt-1">현재 보유 중인 코인 목록 및 수익률</p>
+          <Link href="/portfolio" className="block">
+            <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-slate-800">🪙 보유 자산 현황</h2>
+                <p className="text-xs text-slate-400 mt-1">현재 보유 중인 코인 목록 및 수익률</p>
+              </div>
+              <HoldingsTable holdings={data.holdings} />
             </div>
-            <HoldingsTable holdings={data.holdings} />
-          </div>
+          </Link>
         </section>
 
         {/* AI 관심 코인 테이블 */}

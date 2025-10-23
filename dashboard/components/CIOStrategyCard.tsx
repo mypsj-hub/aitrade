@@ -7,17 +7,17 @@
  * 주요 기능:
  * - 가장 최근 CIO 리포트 자동 조회
  * - 전략 제목과 근거(rationale) 표시
- * - 600자로 제한된 요약본 제공
- * - 전체 분석 페이지로 이동 링크
+ * - 200자로 제한된 요약본 제공 (포트폴리오와 동일)
+ * - 펼치기/접기 토글 기능 (전체 내용 보기)
  * - 60초마다 자동 갱신
  * - 그라데이션 배경으로 강조 표시
  *
  * 데이터 소스: cio_reports 테이블
- * 기술 스택: SWR, Supabase, Next.js Link
+ * 기술 스택: SWR, Supabase
  */
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
 
@@ -45,6 +45,8 @@ async function fetchLatestStrategy(): Promise<CIOStrategy | null> {
 }
 
 export function CIOStrategyCard() {
+  const [showFullContent, setShowFullContent] = useState(false);
+  
   const { data, isLoading } = useSWR<CIOStrategy | null>(
     'latest-cio-strategy',
     fetchLatestStrategy,
@@ -73,10 +75,12 @@ export function CIOStrategyCard() {
     );
   }
 
-  // Rationale을 최대 600자로 제한 (확대)
-  const shortRationale = data.rationale.length > 600
-    ? data.rationale.substring(0, 600) + '...'
+  // Rationale을 최대 200자로 제한 (포트폴리오와 동일)
+  const shortRationale = data.rationale.length > 200
+    ? data.rationale.substring(0, 200) + '...'
     : data.rationale;
+
+  const displayContent = showFullContent ? data.rationale : shortRationale;
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border border-blue-200">
@@ -91,19 +95,20 @@ export function CIOStrategyCard() {
 
       <div className="max-h-96 overflow-y-auto">
         <p className="text-sm text-slate-600 mb-4 whitespace-pre-wrap leading-relaxed">
-          {shortRationale}
+          {displayContent}
         </p>
       </div>
 
-      <Link
-        href="/analysis"
-        className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-      >
-        전체 분석 보기
-        <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
+      {data.rationale.length > 200 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowFullContent(!showFullContent)}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium underline transition"
+          >
+            {showFullContent ? '← 간략히 보기' : '전체 내용 보기 →'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
