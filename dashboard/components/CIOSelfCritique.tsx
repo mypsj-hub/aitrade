@@ -40,7 +40,7 @@ function extractTomorrowStrategy(fullContentMd: string): string {
 
   if (match && match[1]) {
     // 마크다운 정리
-    let content = match[1]
+    const content = match[1]
       .replace(/#{1,6}\s*/g, '')              // # 제거
       .replace(/\*\*/g, '')                   // ** 제거
       .replace(/\*/g, '')                     // * 제거

@@ -20,8 +20,6 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 async function fetchCIOReport(selectedDate: Date): Promise<string | null> {
   const dateString = format(selectedDate, 'yyyy-MM-dd');

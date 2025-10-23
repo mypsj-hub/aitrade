@@ -37,7 +37,7 @@ function extractUnrealizedLoss(fullContentMd: string): string | null {
   }
 
   // 마크다운 정리 (카테고리 번호, **, *, #, 과도한 줄바꿈 제거)
-  let content = match[1]
+  const content = match[1]
     .replace(/#{1,6}\s*/g, '')              // # 제거 (공백 여부 무관)
     .replace(/\*\*/g, '')                   // ** 제거
     .replace(/\*/g, '')                     // * 제거
