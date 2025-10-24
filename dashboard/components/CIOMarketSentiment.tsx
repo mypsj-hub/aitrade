@@ -53,7 +53,7 @@ async function fetchMarketSentimentByDate(selectedDate: Date): Promise<MarketSen
 
   const { data: rawDataArray, error } = await supabase
     .from('cio_reports')
-    .select('full_content_md, report_date')
+    .select('full_content_md, report_date, market_summary')
     .eq('report_type', 'DAILY')
     .eq('report_date', dateString)
     .limit(1);
@@ -62,7 +62,19 @@ async function fetchMarketSentimentByDate(selectedDate: Date): Promise<MarketSen
   const rawData = rawDataArray[0];
 
   const fullContentMd = typeof rawData['full_content_md'] === 'string' ? rawData['full_content_md'] : '';
-  const content = extractMarketSentiment(fullContentMd);
+  let content = extractMarketSentiment(fullContentMd);
+
+  // market_summary에서 공포탐욕지수 추출하여 None 대체
+  const marketSummary = typeof rawData['market_summary'] === 'string' ? rawData['market_summary'] : '';
+  if (content && marketSummary) {
+    // market_summary에서 공포탐욕지수 추출 (예: "공포탐욕지수 27" 또는 "공포 국면(공포탐욕지수 27)")
+    const fearGreedMatch = marketSummary.match(/공포탐욕지수[:\s]*(\d+)/);
+    if (fearGreedMatch) {
+      const fearGreedValue = fearGreedMatch[1];
+      // content에서 "어제 공포탐욕지수: None"을 실제 값으로 대체
+      content = content.replace(/어제\s*공포탐욕지수[:\s]*None/gi, `어제 공포탐욕지수: ${fearGreedValue}`);
+    }
+  }
 
   if (!content) return null;
 

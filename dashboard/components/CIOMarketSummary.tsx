@@ -51,10 +51,11 @@ async function fetchCIOReport(selectedDate: Date): Promise<CIOReport | null> {
   if (match && match[1]) {
     // 마크다운 제거 (##, *, - 등)
     marketSummary = match[1]
-      .replace(/#{1,6}\s/g, '')  // 헤더 제거
+      .replace(/#{1,6}\s*/g, '')  // 헤더 제거 (공백 포함)
       .replace(/\*\*/g, '')       // 볼드 제거
       .replace(/\*/g, '')         // 이탤릭 제거
       .replace(/^[-*]\s/gm, '')   // 리스트 마커 제거
+      .replace(/#/g, '')          // 남은 # 기호 모두 제거  ← 이 줄 추가
       .trim();
   }
 

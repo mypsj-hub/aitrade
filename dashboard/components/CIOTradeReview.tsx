@@ -197,7 +197,7 @@ export function CIOTradeReview({ selectedDate }: CIOTradeReviewProps) {
                             className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-l-4 border-green-500"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                              <div className="flex-shrink-0 min-w-[2.5rem] h-10 px-2 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                                 {coin}
                               </div>
                               <div className="flex-1">
@@ -231,7 +231,7 @@ export function CIOTradeReview({ selectedDate }: CIOTradeReviewProps) {
                             className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 border-l-4 border-red-500"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                              <div className="flex-shrink-0 min-w-[2.5rem] h-10 px-2 bg-red-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                                 {coin}
                               </div>
                               <div className="flex-1">
@@ -274,7 +274,7 @@ export function CIOTradeReview({ selectedDate }: CIOTradeReviewProps) {
                       className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg p-4 border-l-4 border-slate-400"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-10 h-10 bg-slate-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        <div className="flex-shrink-0 min-w-[2.5rem] h-10 px-2 bg-slate-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                           {coinName}
                         </div>
                         <div className="flex-1">

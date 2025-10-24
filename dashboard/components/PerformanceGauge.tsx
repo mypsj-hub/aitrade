@@ -102,6 +102,13 @@ async function fetchPerformanceDataByDate(selectedDate: Date): Promise<Performan
         .replace(/^[-*]\s/gm, '• ')
         .replace(/\n\s*\n\s*\n/g, '\n\n')
         .trim();
+
+      // None 값을 가진 항목 전체를 삭제 (샤프지수, 기타 등)
+      portfolioAllocation = portfolioAllocation
+        .split('\n')
+        .filter(line => !line.match(/:\s*None\s*$/i))
+        .join('\n')
+        .trim();
     }
   }
 
