@@ -39,9 +39,10 @@ export function Navigation() {
   }, []);
 
   const navItems = [
-    { href: '/dashboard', label: '대시보드', icon: '📊' },
-    { href: '/analysis', label: '분석', icon: '🔬' },
-    { href: '/portfolio', label: '포트폴리오', icon: '💼' },
+    { href: '/dashboard', label: '홈', shortLabel: '홈', icon: '🏠' },
+    { href: '/portfolio', label: '포트폴리오', shortLabel: '자산', icon: '💼' },
+    { href: '/analysis', label: '거래분석', shortLabel: '분석', icon: '📊' },
+    { href: '/strategy', label: 'CIO전략', shortLabel: '전략', icon: '🧠' },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -81,6 +82,7 @@ export function Navigation() {
                 <span className="flex items-center gap-2">
                   <span>{item.icon}</span>
                   <span className="hidden sm:inline">{item.label}</span>
+                  <span className="sm:hidden text-xs">{item.shortLabel}</span>
                 </span>
 
                 {/* 활성 탭 하단 밑줄 */}

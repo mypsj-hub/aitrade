@@ -17,7 +17,7 @@
  * 기술 스택: React, TypeScript, Tailwind CSS
  */
 import type { PortfolioSummary } from '@/lib/types';
-import { formatDate, formatCurrencyWithUnit } from '@/lib/utils/formatters';
+import { formatDateTime, formatCurrencyWithUnit } from '@/lib/utils/formatters';
 
 interface Props {
   summary: PortfolioSummary | null;
@@ -41,7 +41,7 @@ export function PortfolioSummaryCard({ summary }: Props) {
       <MetricCard
         title="총순자산"
         value={formatCurrencyWithUnit(summary.총포트폴리오가치)}
-        subtitle={formatDate(summary.날짜)}
+        subtitle={formatDateTime(summary.날짜)}
       />
       <MetricCard
         title="일일 수익률"

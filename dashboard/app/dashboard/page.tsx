@@ -35,12 +35,12 @@ import { SystemMetricsCard } from '@/components/SystemMetricsCard';
 import { CIOStrategyCard } from '@/components/CIOStrategyCard';
 import { KeyTradesCard } from '@/components/KeyTradesCard';
 import { MarketIndicators } from '@/components/MarketIndicators';
-import { QuickLinksCard } from '@/components/QuickLinksCard';
 import { HoldingsTable } from '@/components/HoldingsTable';
 import { RecentTradesTable } from '@/components/RecentTradesTable';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { MarketRegimeBadge } from '@/components/MarketRegimeBadge';
 import { WatchlistTable } from '@/components/WatchlistTable';
+import { NewCoinsCard } from '@/components/NewCoinsCard';
 
 export default function DashboardPage() {
   const { data, isLoading, isError } = useDashboardData();
@@ -148,6 +148,9 @@ export default function DashboardPage() {
           {/* 포트폴리오 요약 */}
           <PortfolioSummaryCard summary={data.summary} />
 
+          {/* 신규 편입 코인 (조건부 렌더링) */}
+          <NewCoinsCard />
+
           {/* 시스템 성과 메트릭 */}
           <SystemMetricsCard />
 
@@ -178,15 +181,13 @@ export default function DashboardPage() {
       <div className="mt-8 space-y-8">
         {/* 보유 자산 테이블 */}
         <section>
-          <Link href="/portfolio" className="block">
-            <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
-              <div className="mb-4">
-                <h2 className="text-xl font-bold text-slate-800">🪙 보유 자산 현황</h2>
-                <p className="text-xs text-slate-400 mt-1">현재 보유 중인 코인 목록 및 수익률</p>
-              </div>
-              <HoldingsTable holdings={data.holdings} />
-            </div>
-          </Link>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <Link href="/portfolio" className="block mb-4 hover:opacity-80 transition-opacity">
+              <h2 className="text-xl font-bold text-slate-800">🪙 보유 자산 현황</h2>
+              <p className="text-xs text-slate-400 mt-1">현재 보유 중인 코인 목록 및 수익률</p>
+            </Link>
+            <HoldingsTable holdings={data.holdings} />
+          </div>
         </section>
 
         {/* AI 관심 코인 테이블 */}
@@ -203,11 +204,6 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold text-slate-800 mb-4">📜 최근 거래 내역</h2>
             <RecentTradesTable trades={data.recentTrades.slice(0, 20)} />
           </div>
-        </section>
-
-        {/* 빠른 링크 */}
-        <section>
-          <QuickLinksCard />
         </section>
       </div>
     </div>

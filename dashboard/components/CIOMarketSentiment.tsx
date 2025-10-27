@@ -53,7 +53,7 @@ async function fetchMarketSentimentByDate(selectedDate: Date): Promise<MarketSen
 
   const { data: rawDataArray, error } = await supabase
     .from('cio_reports')
-    .select('full_content_md, report_date, market_summary')
+    .select('full_content_md, report_date')
     .eq('report_type', 'DAILY')
     .eq('report_date', dateString)
     .limit(1);
@@ -64,15 +64,32 @@ async function fetchMarketSentimentByDate(selectedDate: Date): Promise<MarketSen
   const fullContentMd = typeof rawData['full_content_md'] === 'string' ? rawData['full_content_md'] : '';
   let content = extractMarketSentiment(fullContentMd);
 
-  // market_summary에서 공포탐욕지수 추출하여 None 대체
-  const marketSummary = typeof rawData['market_summary'] === 'string' ? rawData['market_summary'] : '';
-  if (content && marketSummary) {
-    // market_summary에서 공포탐욕지수 추출 (예: "공포탐욕지수 27" 또는 "공포 국면(공포탐욕지수 27)")
-    const fearGreedMatch = marketSummary.match(/공포탐욕지수[:\s]*(\d+)/);
-    if (fearGreedMatch) {
-      const fearGreedValue = fearGreedMatch[1];
-      // content에서 "어제 공포탐욕지수: None"을 실제 값으로 대체
-      content = content.replace(/어제\s*공포탐욕지수[:\s]*None/gi, `어제 공포탐욕지수: ${fearGreedValue}`);
+  // cio_portfolio_decisions 테이블에서 공포탐욕지수 추출
+  if (content) {
+    // 어제 날짜 계산
+    const yesterday = new Date(selectedDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = format(yesterday, 'yyyy-MM-dd');
+
+    // 어제 공포탐욕지수 조회
+    const { data: yesterdayData } = await supabase
+      .from('cio_portfolio_decisions')
+      .select('공포탐욕지수')
+      .gte('결정시각', `${yesterdayString} 00:00:00`)
+      .lt('결정시각', `${dateString} 00:00:00`)
+      .order('결정시각', { ascending: false })
+      .limit(1);
+
+    if (yesterdayData && yesterdayData.length > 0) {
+      const row = yesterdayData[0] as { 공포탐욕지수?: number | null };
+      if (row.공포탐욕지수 !== null && row.공포탐욕지수 !== undefined) {
+        const fearGreedValue = row.공포탐욕지수;
+        // content에서 "어제 공포탐욕지수: None"을 실제 값으로 대체
+        content = content.replace(/어제\s*공포탐욕지수[:\s]*None/gi, `어제 공포탐욕지수: ${fearGreedValue}`);
+      } else {
+        // 데이터가 없으면 "None" 대신 친절한 메시지로 대체
+        content = content.replace(/어제\s*공포탐욕지수[:\s]*None/gi, '어제 공포탐욕지수: 데이터 없음');
+      }
     }
   }
 

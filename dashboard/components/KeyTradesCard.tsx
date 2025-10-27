@@ -35,16 +35,29 @@ interface KeyTrades {
 }
 
 async function fetchKeyTrades(): Promise<KeyTrades> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+
+  // 로컬 시간으로 오늘 00:00:00 생성
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const todayStart = `${year}-${month}-${day} 00:00:00`;
+
+  console.log('[KeyTradesCard] Current time:', now.toLocaleString('ko-KR'));
+  console.log('[KeyTradesCard] Today start:', todayStart);
 
   const { data: todayTrades } = await supabase
     .from('trade_history')
     .select('코인이름, 거래유형, 수익금, 거래일시')
-    .gte('거래일시', today.toISOString())
+    .gte('거래일시', todayStart)
     .order('거래일시', { ascending: false });
 
   const trades = (todayTrades || []) as unknown as Trade[];
+
+  console.log('[KeyTradesCard] Found trades:', trades.length);
+  if (trades.length > 0) {
+    console.log('[KeyTradesCard] Latest trade:', trades[0]);
+  }
 
   if (trades.length === 0) {
     return { maxProfit: null, maxLoss: null, latest: null };
@@ -69,8 +82,12 @@ async function fetchKeyTrades(): Promise<KeyTrades> {
 }
 
 export function KeyTradesCard() {
+  // 날짜별로 캐시 키를 다르게 해서 날짜가 바뀌면 새로 로드하도록
+  const today = new Date();
+  const cacheKey = `key-trades-${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
   const { data, isLoading } = useSWR<KeyTrades>(
-    'key-trades-today',
+    cacheKey,
     fetchKeyTrades,
     { refreshInterval: 60000 }
   );

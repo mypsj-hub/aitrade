@@ -5,14 +5,14 @@
  * 역할: CIO 리포트의 최신 전략과 근거를 요약하여 사용자에게 제공
  *
  * 주요 기능:
- * - 가장 최근 CIO 리포트 자동 조회
+ * - 가장 최근 CIO 전략 자동 조회
  * - 전략 제목과 근거(rationale) 표시
  * - 200자로 제한된 요약본 제공 (포트폴리오와 동일)
  * - 펼치기/접기 토글 기능 (전체 내용 보기)
  * - 60초마다 자동 갱신
  * - 그라데이션 배경으로 강조 표시
  *
- * 데이터 소스: cio_reports 테이블
+ * 데이터 소스: system_status 테이블 (status_key='cio_latest_rationale')
  * 기술 스택: SWR, Supabase
  */
 'use client';
@@ -20,6 +20,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
+import { formatDateTime } from '@/lib/utils/formatters';
 
 interface CIOStrategy {
   reportDate: string;
@@ -28,19 +29,23 @@ interface CIOStrategy {
 }
 
 async function fetchLatestStrategy(): Promise<CIOStrategy | null> {
+  // system_status 테이블에서 cio_latest_rationale 조회
   const { data } = await supabase
-    .from('cio_reports')
-    .select('report_date, title, cio_latest_rationale, outlook')
-    .order('report_date', { ascending: false })
-    .limit(1)
+    .from('system_status')
+    .select('status_value, last_updated')
+    .eq('status_key', 'cio_latest_rationale')
     .single();
 
-  if (!data) return null;
+  if (!data || !data.status_value) return null;
+
+  // status_value에서 첫 문장을 제목으로 사용
+  const lines = data.status_value.split('\n');
+  const firstLine = lines[0] || '투자 전략';
 
   return {
-    reportDate: data.report_date,
-    title: data.title || '전략 보고서',
-    rationale: data.cio_latest_rationale || data.outlook || '전략 내용 없음',
+    reportDate: data.last_updated,
+    title: firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine,
+    rationale: data.status_value,
   };
 }
 
@@ -82,11 +87,15 @@ export function CIOStrategyCard() {
 
   const displayContent = showFullContent ? data.rationale : shortRationale;
 
+  // UTC 시간에서 9시간 빼기 (데이터베이스 저장 방식 보정)
+  const adjustedDate = new Date(data.reportDate);
+  adjustedDate.setHours(adjustedDate.getHours() - 9);
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border border-blue-200">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-slate-800">🤖 AI CIO 최신 전략</h2>
-        <span className="text-xs text-slate-500">{data.reportDate}</span>
+        <span className="text-xs text-slate-500">{formatDateTime(adjustedDate.toISOString())}</span>
       </div>
 
       <h3 className="text-lg font-semibold text-slate-700 mb-3">

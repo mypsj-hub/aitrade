@@ -163,7 +163,7 @@ export function SystemMetricsCard() {
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-bold text-slate-800 mb-4">📈 시스템 성과</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="animate-pulse">
               <div className="h-20 bg-slate-100 rounded-lg"></div>
@@ -178,7 +178,7 @@ export function SystemMetricsCard() {
     <Link href="/analysis" className="block">
       <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
         <h2 className="text-xl font-bold text-slate-800 mb-4">📈 시스템 성과 (30일)</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {metrics.map((metric) => (
             <div
               key={metric.label}

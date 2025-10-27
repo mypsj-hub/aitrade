@@ -47,7 +47,7 @@ export function PortfolioDateSelector({ selectedDate, onDateChange }: PortfolioD
         />
       </div>
       <div className="mt-2 text-xs text-slate-500">
-        {format(selectedDate, 'yyyy년 M월 d일')} 기준 데이터
+        {format(selectedDate, 'yyyy년 M월 d일')} {format(new Date(), 'HH:mm:ss')} 기준 데이터
       </div>
     </div>
   );

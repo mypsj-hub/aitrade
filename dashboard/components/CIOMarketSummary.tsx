@@ -21,6 +21,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils/formatters';
 
 interface CIOReport {
   reportDate: string;
@@ -33,7 +34,7 @@ async function fetchCIOReport(selectedDate: Date): Promise<CIOReport | null> {
 
   const { data, error } = await supabase
     .from('cio_reports')
-    .select('report_date, title, full_content_md')
+    .select('created_at, title, full_content_md')
     .eq('report_type', 'DAILY')
     .eq('report_date', dateString)
     .limit(1);
@@ -60,7 +61,7 @@ async function fetchCIOReport(selectedDate: Date): Promise<CIOReport | null> {
   }
 
   return {
-    reportDate: report.report_date,
+    reportDate: report.created_at,
     title: report.title || 'AI CIO 전략 보고서',
     marketSummary: marketSummary || '시장 및 성과 요약이 없습니다.',
   };
@@ -119,7 +120,7 @@ export function CIOMarketSummary({ selectedDate }: CIOMarketSummaryProps) {
           <h3 className="text-xl font-semibold text-white/90">{data.title}</h3>
         </div>
         <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-          {data.reportDate}
+          {formatDateTime(data.reportDate)}
         </span>
       </div>
 
