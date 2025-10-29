@@ -14,8 +14,10 @@
 
 # 로그 파일
 *.log
+*.log.*
 logs/
 trading_system.log
+trading_system.log.*
 
 # Python (루트 폴더만 적용)
 __pycache__/
@@ -77,6 +79,12 @@ dmypy.json
 
 # Archive (old docs and temp files)
 docs/archive/
+
+# Docs (bot documentation and logs - local only)
+# Strategy: Only dashboard goes to GitHub
+docs/
+!docs/README.md
+docs/prompts_log/
 
 # Cache and debug files
 chart_cache/
