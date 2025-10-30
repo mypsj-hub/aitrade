@@ -39,13 +39,16 @@ async function fetchLatestStrategy(): Promise<CIOStrategy | null> {
   if (!data || !data.status_value) return null;
 
   // status_value에서 첫 문장을 제목으로 사용
-  const lines = data.status_value.split('\n');
+  const lines = data.status_value.split('\n').filter((line: string) => line.trim() !== '');
   const firstLine = lines[0] || '투자 전략';
+
+  // 본문에서는 첫 줄 제외 (중복 방지)
+  const rationaleWithoutTitle = lines.slice(1).join('\n').trim();
 
   return {
     reportDate: data.last_updated,
     title: firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine,
-    rationale: data.status_value,
+    rationale: rationaleWithoutTitle || data.status_value, // fallback: 원본 전체
   };
 }
 
