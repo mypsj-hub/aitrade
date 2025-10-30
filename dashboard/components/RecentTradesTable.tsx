@@ -39,6 +39,7 @@ export function RecentTradesTable({ trades }: Props) {
             <th className="px-4 py-3 text-center font-semibold text-slate-700">유형</th>
             <th className="px-4 py-3 text-right font-semibold text-slate-700">수량</th>
             <th className="px-4 py-3 text-right font-semibold text-slate-700">금액</th>
+            <th className="px-4 py-3 text-right font-semibold text-slate-700">손익</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-700">사유</th>
           </tr>
         </thead>
@@ -80,6 +81,21 @@ export function RecentTradesTable({ trades }: Props) {
               </td>
               <td className="px-4 py-3 text-right text-slate-600">{trade.거래수량.toFixed(4)}</td>
               <td className="px-4 py-3 text-right text-slate-900">{formatCurrency(trade.거래금액)}</td>
+              <td className="px-4 py-3 text-right">
+                {(() => {
+                  const value = trade.수익금;
+                  if (value === null || value === undefined) return <span className="text-slate-500">-</span>;
+
+                  let colorClass = "text-slate-900";
+                  if (value > 0) {
+                    colorClass = "text-red-600"; // 수익 (+)
+                  } else if (value < 0) {
+                    colorClass = "text-blue-600"; // 손실 (-)
+                  }
+
+                  return <span className={`font-semibold ${colorClass}`}>{formatCurrency(value)}</span>;
+                })()}
+              </td>
               <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{trade.거래사유}</td>
             </tr>
           ))}

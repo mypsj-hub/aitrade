@@ -5,6 +5,7 @@
  *
  * 주요 기능:
  * - 특정 날짜의 CIO 포트폴리오 결정 조회
+ * - holding_status와 JOIN하여 실제 관리상태 반영
  * - 목표 비중 vs 현재 비중 갭 계산
  * - 비중 변화량 추적
  * - 관리 상태 확인
@@ -65,23 +66,50 @@ export interface WeightGapInfo extends CIODecision {
 }
 
 /**
- * 특정 날짜의 CIO 결정 조회
+ * 특정 날짜의 CIO 결정 조회 (holding_status와 JOIN하여 실제 관리상태 반영)
  */
 async function fetchCIODecisions(dateStr: string): Promise<CIODecision[]> {
-  const { data, error } = await supabase
+  // 1. cio_portfolio_decisions 조회
+  const { data: decisionsData, error: decisionsError } = await supabase
     .from('cio_portfolio_decisions')
     .select('*')
     .gte('결정시각', dateStr)
     .lt('결정시각', getNextDay(dateStr))
     .order('결정시각', { ascending: false });
 
-  if (error) {
-    console.error('[useCIODecisions] Supabase error:', error);
-    throw new Error(`Failed to fetch CIO decisions: ${error.message}`);
+  if (decisionsError) {
+    console.error('[useCIODecisions] Supabase error:', decisionsError);
+    throw new Error(`Failed to fetch CIO decisions: ${decisionsError.message}`);
   }
 
+  // 2. holding_status에서 실제 관리상태 조회
+  const { data: holdingsData, error: holdingsError } = await supabase
+    .from('holding_status')
+    .select('코인이름, 관리상태');
+
+  if (holdingsError) {
+    console.error('[useCIODecisions] Failed to fetch holdings:', holdingsError);
+  }
+
+  // 3. holding_status의 관리상태를 Map으로 변환
+  const statusMap = new Map<string, string>();
+  if (holdingsData) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const holding of holdingsData as any[]) {
+      statusMap.set(holding.코인이름, holding.관리상태);
+    }
+  }
+
+  // 4. CIO 결정에 실제 관리상태 병합
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data || []) as any[];
+  const decisions = (decisionsData || []) as any[];
+
+  return decisions.map(decision => ({
+    ...decision,
+    // holding_status의 실제 관리상태로 덮어쓰기
+    // holding_status에 없는 코인은 '제외'로 처리 (과거 추적 코인)
+    관리상태: statusMap.get(decision.코인이름) || '제외'
+  }));
 }
 
 /**

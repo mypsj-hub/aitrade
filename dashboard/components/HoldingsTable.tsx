@@ -111,6 +111,8 @@ export function HoldingsTable({ holdings }: Props) {
             <th className="px-4 py-3 text-right font-semibold text-slate-700">보유수량</th>
             <th className="px-4 py-3 text-right font-semibold text-slate-700">평가금액</th>
             <th className="px-4 py-3 text-right font-semibold text-slate-700">수익률</th>
+            <th className="px-4 py-3 text-right font-semibold text-slate-700">목표수익률</th>
+            <th className="px-4 py-3 text-right font-semibold text-slate-700">손절률</th>
             <th className="px-4 py-3 text-center font-semibold text-slate-700">상태</th>
             <th className="px-4 py-3 text-center font-semibold text-slate-700">관리상태</th>
             <th className="px-4 py-3 text-center font-semibold text-slate-700">AI 판단</th>
@@ -138,6 +140,12 @@ export function HoldingsTable({ holdings }: Props) {
                 <td className="px-4 py-3 text-right text-slate-900">{formatCurrency(holding.평가금액)}</td>
                 <td className={`px-4 py-3 text-right font-bold ${holding.수익률 >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
                   {holding.수익률.toFixed(2)}%
+                </td>
+                <td className="px-4 py-3 text-right text-green-600 font-semibold">
+                  {holding.GPT목표수익률 ? `+${holding.GPT목표수익률.toFixed(1)}%` : '-'}
+                </td>
+                <td className="px-4 py-3 text-right text-blue-600 font-semibold">
+                  {holding.GPT목표손절률 ? `${holding.GPT목표손절률.toFixed(1)}%` : '-'}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <span className={`px-2 py-1 text-xs rounded-full ${
