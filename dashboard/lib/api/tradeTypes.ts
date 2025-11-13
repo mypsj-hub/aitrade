@@ -30,7 +30,8 @@ export async function getDistinctTradeTypes(): Promise<string[]> {
 
     // 중복 제거하여 고유한 거래 유형만 추출
     // TypeScript 타입 단언: Supabase 한글 컬럼명 타입 추론 이슈 해결
-    const uniqueTypes = [...new Set((data as Array<{ 거래유형: string }>).map(d => d.거래유형))];
+    // unknown을 거쳐서 타입 단언 (Vercel 빌드 환경 호환성)
+    const uniqueTypes = [...new Set((data as unknown as Array<{ 거래유형: string }>).map(d => d.거래유형))];
 
     console.log('[getDistinctTradeTypes] Found unique types:', uniqueTypes);
     return uniqueTypes;
