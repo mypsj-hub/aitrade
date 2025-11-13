@@ -138,29 +138,6 @@ export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
     return null;
   };
 
-  const HourTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean;
-    payload?: Array<{ value: number; name: string; payload: HourStats }>;
-  }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 border border-slate-200 rounded shadow-lg">
-          <p className="text-sm font-semibold text-slate-700 mb-2">{data.hour}</p>
-          <p className="text-sm text-slate-600">거래 수: {data.count}건</p>
-          <p className={`text-sm ${data.avgProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
-            평균 손익: {data.avgProfit >= 0 ? '+' : ''}
-            {data.avgProfit.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   if (trades.length === 0) {
     return (
       <div className="text-center py-12 text-slate-500">

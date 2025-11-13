@@ -75,9 +75,6 @@ export function AnalysisFilters() {
       isMeta: false,
     }));
 
-  // 전체 필터 옵션 = 메타 필터 + 구체적 필터
-  const allTradeTypeOptions = [...metaFilters, ...specificFilters];
-
   const handleTradeTypeToggle = (type: string) => {
     if (filters.tradeTypes.includes(type)) {
       setTradeTypes(filters.tradeTypes.filter((t) => t !== type));
