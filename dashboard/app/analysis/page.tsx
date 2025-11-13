@@ -113,21 +113,55 @@ export default function AnalysisPage() {
 
       const isInDateRange = tradeDate >= startOfDay && tradeDate <= endOfDay;
 
-      const matchesTradeType =
-        filters.tradeTypes.length === 0 || filters.tradeTypes.includes(trade.거래유형);
+      // 하이브리드 필터링 로직
+      const matchesTradeType = (() => {
+        // 필터가 없으면 전체 표시
+        if (filters.tradeTypes.length === 0) return true;
+
+        return filters.tradeTypes.some((filterType) => {
+          // 메타 필터: 넓은 범위 LIKE 검색
+          if (filterType === '매수') {
+            return trade.거래유형.includes('매수');
+          }
+          if (filterType === '매도') {
+            return (
+              trade.거래유형.includes('매도') ||
+              trade.거래유형.includes('익절') ||
+              trade.거래유형.includes('손절')
+            );
+          }
+
+          // 구체적 필터: 정확히 일치
+          return trade.거래유형 === filterType;
+        });
+      })();
 
       return isInDateRange && matchesTradeType;
     });
   }, [allTrades, filters]);
 
   const summary = useMemo(() => {
+    // 청산 거래 분리 (익절, 손절, 매도 포함)
     const closedTrades = filteredTrades.filter((t) =>
       ['익절', '손절', '매도'].some((keyword) => t.거래유형.includes(keyword))
     );
 
-    const totalTrades = closedTrades.length;
+    const totalTrades = filteredTrades.length; // 전체 거래 수
+    const closedTradesCount = closedTrades.length; // 청산 거래 수
+
+    // 청산 거래가 없으면 통계를 null로 설정
+    if (closedTradesCount === 0) {
+      return {
+        totalTrades,
+        closedTradesCount,
+        totalProfit: null,
+        winRate: null,
+        profitFactor: null,
+      };
+    }
+
     const winTrades = closedTrades.filter((t) => (t.수익금 || 0) > 0);
-    const winRate = totalTrades > 0 ? (winTrades.length / totalTrades) * 100 : 0;
+    const winRate = (winTrades.length / closedTradesCount) * 100;
 
     const totalProfit = closedTrades.reduce((sum, t) => sum + (t.수익금 || 0), 0);
 
@@ -141,7 +175,7 @@ export default function AnalysisPage() {
     );
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 999 : 0;
 
-    return { totalTrades, totalProfit, winRate, profitFactor };
+    return { totalTrades, closedTradesCount, totalProfit, winRate, profitFactor };
   }, [filteredTrades]);
 
   const pnlByAsset = useMemo(() => {
@@ -185,6 +219,7 @@ export default function AnalysisPage() {
         <div className="lg:col-span-3 space-y-6">
           <AnalysisSummary
             totalTrades={summary.totalTrades}
+            closedTradesCount={summary.closedTradesCount}
             totalProfit={summary.totalProfit}
             winRate={summary.winRate}
             profitFactor={summary.profitFactor}

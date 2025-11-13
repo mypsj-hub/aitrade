@@ -65,15 +65,17 @@ export interface PortfolioSummary {
 export interface CIOReport {
   id: number;
   report_date: string;
-  report_type: string;
+  report_type: 'DAILY' | 'WEEKLY' | 'MONTHLY';
   title: string;
-  market_summary: Record<string, unknown>; // JSONB
+  market_summary: string;
   performance_review: string;
-  self_critique: Record<string, unknown>; // JSONB
+  self_critique: Record<string, unknown>;
   outlook: string;
   full_content_md: string;
-  raw_json_data: Record<string, unknown>; // JSONB
+  raw_json_data: Record<string, unknown>;
   cio_latest_rationale: string;
+  process2_latest_advice: string;        // ✅ 신규 추가
+  execution_summary?: string;  
 }
 
 export interface SystemStatus {

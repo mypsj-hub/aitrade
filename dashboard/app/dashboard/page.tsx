@@ -7,7 +7,7 @@
  * 주요 기능:
  * 1. 실시간 포트폴리오 요약 (총자산, 수익률, 보유 코인 수)
  * 2. 시스템 성과 메트릭 (최근 30일 거래 수, 승률, 평균 보유기간) - 클릭 시 분석 페이지
- * 3. AI CIO 최신 전략 표시
+ * 3. AI 투자 전략 비교 (CIO 장기 전략 + Process2 단기 전술)
  * 4. 오늘의 주요 거래 내역 (최근 5건)
  * 5. 시장 지표 (공포탐욕지수, BTC 도미넌스, 김치 프리미엄)
  * 6. 빠른 링크 (Upbit, CoinGecko 등)
@@ -32,7 +32,7 @@ import { useDashboardData } from '@/lib/hooks/useDashboardData';
 import { usePageViewCounter } from '@/lib/hooks/usePageViewCounter';
 import { PortfolioSummaryCard } from '@/components/PortfolioSummaryCard';
 import { SystemMetricsCard } from '@/components/SystemMetricsCard';
-import { CIOStrategyCard } from '@/components/CIOStrategyCard';
+import { StrategyComparisonCard } from '@/components/StrategyComparisonCard';
 import { KeyTradesCard } from '@/components/KeyTradesCard';
 import { MarketIndicators } from '@/components/MarketIndicators';
 import { HoldingsTable } from '@/components/HoldingsTable';
@@ -154,8 +154,8 @@ export default function DashboardPage() {
           {/* 시스템 성과 메트릭 */}
           <SystemMetricsCard />
 
-          {/* AI CIO 최신 전략 */}
-          <CIOStrategyCard />
+          {/* AI 투자 전략 (CIO + Process2) */}
+          <StrategyComparisonCard />
 
           {/* 오늘의 주요 거래 */}
           <KeyTradesCard />

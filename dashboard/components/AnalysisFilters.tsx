@@ -6,31 +6,77 @@
  *
  * 주요 기능:
  * - 시작일/종료일 날짜 선택기
- * - 6가지 거래유형 토글 선택 (신규매수, 추가매수, 익절, 손절, 부분손절, 매도)
+ * - 동적 거래유형 토글 선택 (DB에서 실제 유형 조회)
+ * - 2단계 필터링: 메타 필터(매수/매도 전체) + 구체적 필터(신규매수, 익절 등)
  * - 선택된 필터 요약 표시
  * - 필터 초기화 버튼
  * - Sticky 위치로 스크롤 시 상단 고정
  * - Zustand store와 연동하여 전역 상태 관리
  *
- * 데이터 소스: filterStore (Zustand)
+ * 데이터 소스:
+ * - filterStore (Zustand)
+ * - trade_history 테이블 (거래 유형 동적 조회)
+ *
  * 기술 스택: Zustand, date-fns, Tailwind CSS
  */
 'use client';
 
 import { useFilterStore } from '@/lib/store/filterStore';
 import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { getDistinctTradeTypes, getColorForTradeType } from '@/lib/api/tradeTypes';
+
+interface TradeTypeOption {
+  value: string;
+  label: string;
+  color: string;
+  isMeta: boolean;
+}
 
 export function AnalysisFilters() {
   const { filters, setDateRange, setTradeTypes, resetFilters } = useFilterStore();
+  const [availableTradeTypes, setAvailableTradeTypes] = useState<string[]>([]);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
 
-  const tradeTypeOptions = [
-    { value: '신규매수', label: '신규매수', color: 'bg-blue-100 text-blue-700' },
-    { value: '추가매수', label: '추가매수', color: 'bg-cyan-100 text-cyan-700' },
-    { value: '익절', label: '익절', color: 'bg-green-100 text-green-700' },
-    { value: '손절', label: '손절', color: 'bg-red-100 text-red-700' },
-    { value: '부분손절', label: '부분손절', color: 'bg-orange-100 text-orange-700' },
-    { value: '매도', label: '매도', color: 'bg-purple-100 text-purple-700' },
+  // DB에서 실제 거래 유형 조회
+  useEffect(() => {
+    async function fetchTradeTypes() {
+      setIsLoadingTypes(true);
+      const types = await getDistinctTradeTypes();
+      setAvailableTradeTypes(types);
+      setIsLoadingTypes(false);
+    }
+    fetchTradeTypes();
+  }, []);
+
+  // 메타 필터 정의 (넓은 범위 검색용)
+  const metaFilters: TradeTypeOption[] = [
+    {
+      value: '매수',
+      label: '매수 (전체)',
+      color: 'bg-blue-200 text-blue-800 border-2 border-blue-400',
+      isMeta: true,
+    },
+    {
+      value: '매도',
+      label: '매도 (전체)',
+      color: 'bg-red-200 text-red-800 border-2 border-red-400',
+      isMeta: true,
+    },
   ];
+
+  // 구체적 필터 생성 (메타 필터 제외한 실제 거래 유형)
+  const specificFilters: TradeTypeOption[] = availableTradeTypes
+    .filter(type => type !== '매수' && type !== '매도') // 메타 필터 제외
+    .map(type => ({
+      value: type,
+      label: type,
+      color: getColorForTradeType(type),
+      isMeta: false,
+    }));
+
+  // 전체 필터 옵션 = 메타 필터 + 구체적 필터
+  const allTradeTypeOptions = [...metaFilters, ...specificFilters];
 
   const handleTradeTypeToggle = (type: string) => {
     if (filters.tradeTypes.includes(type)) {
@@ -88,25 +134,66 @@ export function AnalysisFilters() {
           <label className="block text-sm font-medium text-slate-700 mb-2">
             거래 유형
           </label>
-          <div className="flex flex-wrap gap-2">
-            {tradeTypeOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleTradeTypeToggle(option.value)}
-                className={`
-                  px-3 py-1 rounded-full text-xs font-medium transition
-                  ${
-                    filters.tradeTypes.includes(option.value)
-                      ? option.color + ' ring-2 ring-offset-1 ring-blue-500'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }
-                `}
-              >
-                {option.label}
-                {filters.tradeTypes.includes(option.value) && ' ✓'}
-              </button>
-            ))}
-          </div>
+
+          {isLoadingTypes ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="text-sm text-slate-500">필터 로딩 중...</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* 메타 필터 (넓은 범위) */}
+              <div>
+                <div className="text-xs text-slate-500 mb-1 font-medium">📂 전체 필터</div>
+                <div className="flex flex-wrap gap-2">
+                  {metaFilters.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleTradeTypeToggle(option.value)}
+                      className={`
+                        px-3 py-1 rounded-full text-xs font-bold transition
+                        ${
+                          filters.tradeTypes.includes(option.value)
+                            ? option.color + ' ring-2 ring-offset-1 ring-blue-500'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-300'
+                        }
+                      `}
+                      title={`"${option.value}"가 포함된 모든 거래 유형`}
+                    >
+                      {option.label}
+                      {filters.tradeTypes.includes(option.value) && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 구체적 필터 */}
+              {specificFilters.length > 0 && (
+                <div>
+                  <div className="text-xs text-slate-500 mb-1 font-medium">🎯 상세 필터</div>
+                  <div className="flex flex-wrap gap-2">
+                    {specificFilters.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleTradeTypeToggle(option.value)}
+                        className={`
+                          px-3 py-1 rounded-full text-xs font-medium transition
+                          ${
+                            filters.tradeTypes.includes(option.value)
+                              ? option.color + ' ring-2 ring-offset-1 ring-blue-500'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }
+                        `}
+                        title={`정확히 "${option.value}"인 거래만 표시`}
+                      >
+                        {option.label}
+                        {filters.tradeTypes.includes(option.value) && ' ✓'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 활성 필터 요약 */}

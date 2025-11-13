@@ -234,8 +234,16 @@ export function CoinStatsTable({ trades }: CoinStatsTableProps) {
 
   if (coinStats.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-500">
-        청산된 거래가 없어 통계를 표시할 수 없습니다.
+      <div className="text-center py-12 px-6">
+        <div className="inline-block p-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+          <p className="text-lg text-slate-600 mb-2">📊 청산 거래 없음</p>
+          <p className="text-sm text-slate-500 mb-3">
+            선택된 필터에 청산 거래가 없어 코인별 통계를 집계할 수 없습니다.
+          </p>
+          <p className="text-xs text-slate-400">
+            💡 <strong>매도</strong>, <strong>익절</strong>, <strong>손절</strong> 필터를 포함하여 선택하세요
+          </p>
+        </div>
       </div>
     );
   }

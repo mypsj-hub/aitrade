@@ -43,9 +43,26 @@ interface HourStats {
 }
 
 export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
-  // 거래유형별 통계
+  // 거래유형별 분포 (전체 거래 - 매수 포함)
+  const tradeTypeDistribution = useMemo(() => {
+    const typeMap = new Map<string, number>();
+
+    trades.forEach((trade) => {
+      const type = trade.거래유형;
+      typeMap.set(type, (typeMap.get(type) || 0) + 1);
+    });
+
+    return Array.from(typeMap.entries())
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [trades]);
+
+  // 거래유형별 손익 통계 (청산 거래만)
   const tradeTypeStats = useMemo<TradeTypeStats[]>(() => {
     const closedTrades = trades.filter((t) => t.수익금 !== null);
+
+    if (closedTrades.length === 0) return [];
+
     const typeMap = new Map<string, TradeTypeStats>();
 
     closedTrades.forEach((trade) => {
@@ -78,26 +95,20 @@ export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
       .sort((a, b) => b.count - a.count);
   }, [trades]);
 
-  // 시간대별 통계
+  // 시간대별 분포 (전체 거래)
   const hourStats = useMemo<HourStats[]>(() => {
-    const closedTrades = trades.filter((t) => t.수익금 !== null);
-    const hourMap = new Map<number, { count: number; totalProfit: number }>();
+    const hourMap = new Map<number, number>();
 
-    closedTrades.forEach((trade) => {
+    trades.forEach((trade) => {
       const hour = new Date(trade.거래일시).getHours();
-      if (!hourMap.has(hour)) {
-        hourMap.set(hour, { count: 0, totalProfit: 0 });
-      }
-      const stats = hourMap.get(hour)!;
-      stats.count += 1;
-      stats.totalProfit += trade.수익금 || 0;
+      hourMap.set(hour, (hourMap.get(hour) || 0) + 1);
     });
 
     return Array.from(hourMap.entries())
-      .map(([hour, { count, totalProfit }]) => ({
+      .map(([hour, count]) => ({
         hour: `${hour}시`,
         count,
-        avgProfit: count > 0 ? totalProfit / count : 0,
+        avgProfit: 0, // 전체 거래 분포에서는 손익 표시 안함
       }))
       .sort((a, b) => parseInt(a.hour) - parseInt(b.hour));
   }, [trades]);
@@ -160,43 +171,62 @@ export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
 
   return (
     <div className="space-y-6">
-      {/* 거래유형별 성과 차트 */}
+      {/* 거래유형별 분포 차트 (전체 거래) */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">📊 거래 유형별 성과</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">📊 거래 유형별 분포</h3>
+        <p className="text-xs text-slate-500 mb-4">필터링된 모든 거래의 유형별 분포</p>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={tradeTypeStats}>
+          <BarChart data={tradeTypeDistribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="type" tick={{ fontSize: 11, fill: '#64748b' }} />
-            <YAxis
-              yAxisId="left"
-              orientation="left"
-              tick={{ fontSize: 11, fill: '#64748b' }}
-              label={{ value: '승률 (%)', angle: -90, position: 'insideLeft', fontSize: 11 }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: 11, fill: '#64748b' }}
-              label={{ value: '거래 수', angle: 90, position: 'insideRight', fontSize: 11 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
+            <YAxis tick={{ fontSize: 11, fill: '#64748b' }} label={{ value: '거래 수', angle: -90, position: 'insideLeft', fontSize: 11 }} />
+            <Tooltip />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar yAxisId="right" dataKey="count" name="거래 수" fill="#94a3b8" />
-            <Bar yAxisId="left" dataKey="winRate" name="승률 (%)" fill="#3b82f6">
-              {tradeTypeStats.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.winRate >= 60 ? '#10b981' : entry.winRate >= 40 ? '#3b82f6' : '#ef4444'}
-                />
-              ))}
-            </Bar>
+            <Bar dataKey="count" name="거래 수" fill="#94a3b8" />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* 거래유형별 상세 통계 테이블 */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">📋 거래 유형별 상세 통계</h3>
+      {/* 거래유형별 손익 통계 (청산 거래만) */}
+      {tradeTypeStats.length > 0 ? (
+        <>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">💰 거래 유형별 손익 성과</h3>
+            <p className="text-xs text-slate-500 mb-4">청산 거래(매도/익절/손절)의 승률 및 손익 분석</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={tradeTypeStats}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="type" tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis
+                  yAxisId="left"
+                  orientation="left"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  label={{ value: '승률 (%)', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  label={{ value: '거래 수', angle: 90, position: 'insideRight', fontSize: 11 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="right" dataKey="count" name="거래 수" fill="#94a3b8" />
+                <Bar yAxisId="left" dataKey="winRate" name="승률 (%)" fill="#3b82f6">
+                  {tradeTypeStats.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.winRate >= 60 ? '#10b981' : entry.winRate >= 40 ? '#3b82f6' : '#ef4444'}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* 거래유형별 상세 통계 테이블 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">📋 거래 유형별 상세 통계</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
@@ -255,17 +285,34 @@ export function AIPatternAnalysis({ trades }: AIPatternAnalysisProps) {
             </tbody>
           </table>
         </div>
-      </div>
+          </div>
+        </>
+      ) : (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="text-center py-8">
+            <div className="inline-block p-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+              <p className="text-lg text-slate-600 mb-2">💰 청산 거래 없음</p>
+              <p className="text-sm text-slate-500 mb-3">
+                선택된 필터에 청산 거래가 없어 손익 성과를 분석할 수 없습니다.
+              </p>
+              <p className="text-xs text-slate-400">
+                💡 <strong>매도</strong>, <strong>익절</strong>, <strong>손절</strong> 필터를 포함하여 선택하세요
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* 시간대별 거래 분포 - 마지막으로 이동 */}
+      {/* 시간대별 거래 분포 */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-4">⏰ 시간대별 거래 패턴</h3>
+        <p className="text-xs text-slate-500 mb-4">필터링된 전체 거래의 시간대별 분포</p>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={hourStats}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#64748b' }} />
             <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-            <Tooltip content={<HourTooltip />} />
+            <Tooltip />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="count" name="거래 수" fill="#8b5cf6" />
           </BarChart>

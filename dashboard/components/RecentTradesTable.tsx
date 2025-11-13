@@ -96,7 +96,11 @@ export function RecentTradesTable({ trades }: Props) {
                   return <span className={`font-semibold ${colorClass}`}>{formatCurrency(value)}</span>;
                 })()}
               </td>
-              <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{trade.거래사유}</td>
+              <td className="px-4 py-3 text-slate-600 text-xs max-w-md">
+                <div className="whitespace-pre-wrap break-words leading-relaxed">
+                  {trade.거래사유}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

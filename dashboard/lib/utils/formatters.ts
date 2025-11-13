@@ -19,19 +19,14 @@ export function formatDate(dateStr: string): string {
 
 /**
  * ISO 날짜 문자열을 YYYY-MM-DD HH:MM:SS 형식으로 변환
+ * 백엔드에서 이미 한국 시간(KST)으로 저장하므로 시간대 변환 없이 표시
  * @param dateStr ISO 날짜 문자열
  * @returns 'YYYY-MM-DD HH:MM:SS' 형식 문자열
  */
 export function formatDateTime(dateStr: string): string {
   try {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    // ISO 문자열을 YYYY-MM-DD HH:MM:SS 형식으로 변환 (시간대 변환 없음)
+    return dateStr.replace('T', ' ').substring(0, 19);
   } catch {
     return dateStr;
   }
